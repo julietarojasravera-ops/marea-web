@@ -39,6 +39,7 @@ document.querySelectorAll("[data-seccion]").forEach((boton) => {
     if (boton.dataset.seccion === "dashboard") cargarDashboard();
     if (boton.dataset.seccion === "reservas") cargarReservas();
     if (boton.dataset.seccion === "mesas") pintarMesas();
+    if (boton.dataset.seccion === "clientes") cargarClientesTabla();
   });
 });
 
@@ -52,7 +53,10 @@ async function cargarMesas() {
 }
 
 async function cargarClientes() {
-  const { data, error } = await db.from("usuario").select("id_usuario, nombre, email").order("nombre");
+  const { data, error } = await db
+    .from("usuario")
+    .select("id_usuario, nombre, email, rol, fecha_creacion")
+    .order("nombre");
   if (!error) clientes = data;
 }
 
@@ -360,6 +364,64 @@ document.getElementById("form-mesa").addEventListener("submit", async (e) => {
   await cargarMesas();
   pintarMesas();
 });
+
+// ---------------------------------------------------------
+// CLIENTES
+// ---------------------------------------------------------
+let filasClientes = [];
+
+async function cargarClientesTabla() {
+  await cargarClientes();
+  const { data, error } = await db.from("reserva").select("id_usuario, fecha, hora, estado");
+  if (error) { avisoAdmin("error", mensajeDeError(error)); return; }
+
+  const hoy = hoyISO();
+  filasClientes = clientes.map((c) => {
+    const propias = data.filter((r) => r.id_usuario === c.id_usuario);
+    const validas = propias.filter((r) => r.estado !== "cancelada");
+    const asistio = propias.filter((r) => r.estado === "completada");
+    const fallas = propias.filter((r) => r.estado === "cancelada" || r.estado === "no_asistio");
+    const ultima = asistio.map((r) => r.fecha).sort().pop() || null;
+    const proxima = propias
+      .filter((r) => r.estado === "confirmada" && r.fecha >= hoy)
+      .map((r) => r.fecha).sort()[0] || null;
+    return { ...c, total: validas.length, asistio: asistio.length, fallas: fallas.length, ultima, proxima };
+  });
+
+  const soloClientes = filasClientes.filter((c) => c.rol === "cliente").length;
+  document.getElementById("resumen-clientes").textContent =
+    `${soloClientes} ${soloClientes === 1 ? "cliente registrado" : "clientes registrados"}`;
+  pintarClientes();
+}
+
+function pintarClientes() {
+  const texto = document.getElementById("buscar-cliente").value.trim().toLowerCase();
+  const lista = filasClientes.filter((c) =>
+    !texto || (c.nombre || "").toLowerCase().includes(texto) || c.email.toLowerCase().includes(texto));
+
+  const cuerpo = document.getElementById("tabla-clientes");
+  if (!lista.length) {
+    cuerpo.innerHTML = `<tr><td colspan="7" class="text-center py-4 texto-suave">No hay clientes que coincidan.</td></tr>`;
+    return;
+  }
+  const fechaCorta = (f) => f ? formatearFecha(f) : "–";
+  cuerpo.innerHTML = lista.map((c) => `
+    <tr>
+      <td>
+        <div class="celda-principal">${esc(c.nombre || "Sin nombre")}
+          ${c.rol === "admin" ? '<span class="estado estado-completada ms-1">Admin</span>' : ""}</div>
+        <div class="celda-secundaria">${esc(c.email)}</div>
+      </td>
+      <td class="celda-fecha">${c.fecha_creacion ? new Date(c.fecha_creacion).toLocaleDateString("es-UY") : "–"}</td>
+      <td>${c.total}</td>
+      <td>${c.asistio}</td>
+      <td>${c.fallas}</td>
+      <td class="celda-fecha">${fechaCorta(c.ultima)}</td>
+      <td class="celda-fecha">${fechaCorta(c.proxima)}</td>
+    </tr>`).join("");
+}
+
+document.getElementById("buscar-cliente").addEventListener("input", pintarClientes);
 
 // ---------------------------------------------------------
 // Inicio

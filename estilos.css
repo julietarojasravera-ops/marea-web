@@ -446,3 +446,11 @@ a { color: var(--azul-ola); }
   .grafico { gap: 0.4rem; }
   .barra-pista { height: 130px; }
 }
+
+/* Clientes */
+.campo-buscar { min-width: 260px; }
+.pestanas-admin { min-width: 440px; }
+@media (max-width: 576px) {
+  .pestanas-admin { min-width: 100%; }
+  .pestanas-admin .pestana { font-size: 0.85rem; padding: 0.5rem 0.3rem; }
+}
