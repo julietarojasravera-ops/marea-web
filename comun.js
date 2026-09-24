@@ -89,7 +89,8 @@ function mensajeDeError(error) {
   if (m.includes("Invalid login credentials")) return "El correo o la contraseña no son correctos.";
   if (m.includes("Email not confirmed")) return "Todavía no confirmaste tu correo. Revisá tu bandeja de entrada.";
   if (m.includes("User already registered")) return "Ya existe una cuenta con ese correo. Probá ingresar.";
-  if (m.includes("Password should be")) return "La contraseña tiene que tener al menos 6 caracteres.";
+  if (m.includes("Password should")) return "La contraseña tiene que tener al menos 8 caracteres, con letras y números.";
+  if (m.includes("rate limit") || m.includes("too many")) return "Demasiados intentos seguidos. Esperá unos minutos y probá de nuevo.";
   if (m.includes("exclusion constraint") || m.includes("sin_superposicion"))
     return "Esa mesa se acaba de ocupar. Probá de nuevo.";
   if (m.includes("Invalid API key") || m.includes("No API key"))

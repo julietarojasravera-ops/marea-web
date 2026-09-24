@@ -60,10 +60,27 @@ formRegistro.addEventListener("submit", async (e) => {
   boton.disabled = true;
   ocultarAviso("aviso-login");
 
+  const clave = document.getElementById("registro-clave").value;
+  if (clave.length < 8 || !/[A-Za-z]/.test(clave) || !/[0-9]/.test(clave)) {
+    mostrarAviso("aviso-login", "error", "La contraseña tiene que tener al menos 8 caracteres, con letras y números.");
+    boton.disabled = false;
+    return;
+  }
+  if (!document.getElementById("registro-privacidad").checked) {
+    mostrarAviso("aviso-login", "error", "Para crear la cuenta tenés que aceptar la política de privacidad.");
+    boton.disabled = false;
+    return;
+  }
+
   const { data, error } = await db.auth.signUp({
     email: document.getElementById("registro-email").value.trim(),
-    password: document.getElementById("registro-clave").value,
-    options: { data: { nombre: document.getElementById("registro-nombre").value.trim() } },
+    password: clave,
+    options: {
+      data: {
+        nombre: document.getElementById("registro-nombre").value.trim(),
+        acepta_privacidad: "si",
+      },
+    },
   });
 
   if (error) {

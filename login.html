@@ -51,9 +51,17 @@
             <label class="form-label" for="registro-email">Correo</label>
             <input class="form-control" type="email" id="registro-email" required autocomplete="email">
           </div>
-          <div class="mb-4">
-            <label class="form-label" for="registro-clave">Contraseña (mínimo 6 caracteres)</label>
-            <input class="form-control" type="password" id="registro-clave" required minlength="6" autocomplete="new-password">
+          <div class="mb-3">
+            <label class="form-label" for="registro-clave">Contraseña</label>
+            <input class="form-control" type="password" id="registro-clave" required minlength="8"
+                   pattern="(?=.*[A-Za-z])(?=.*[0-9]).{8,}" autocomplete="new-password">
+            <div class="ayuda-campo">Mínimo 8 caracteres, con letras y números.</div>
+          </div>
+          <div class="form-check mb-4 consentimiento">
+            <input class="form-check-input" type="checkbox" id="registro-privacidad" required>
+            <label class="form-check-label" for="registro-privacidad">
+              Leí y acepto la <a href="privacidad.html" target="_blank" rel="noopener">política de privacidad</a>.
+            </label>
           </div>
           <button type="submit" class="btn-marea oscuro ancho">Crear cuenta</button>
         </form>

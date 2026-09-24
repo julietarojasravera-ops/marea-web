@@ -80,6 +80,15 @@ Navegador ──► Vercel (sitio) ──► Supabase (Auth + API + PostgreSQL)
 | `comun.js` | Funciones compartidas (sesión, roles, mensajes) |
 | `config.js` | Conexión a Supabase (clave pública) |
 | `estilos.css` | Paleta de colores y estilos |
+| `privacidad.html` | Política de privacidad (Ley 18.331) |
+| `vercel.json` | Encabezados de seguridad del sitio (CSP, anti-clickjacking) |
+| `sql-1-base-de-datos.sql` | Tablas, reglas, funciones y seguridad (RLS) en Supabase |
+| `sql-2-correos-y-alerta.sql` | Trigger que detecta reservas nuevas, cambios y cancelaciones, y la alerta del 80 % |
+| `sql-3-correos-armados.sql` | Arma el asunto y el diseño de cada correo antes de enviarlo a Make |
+| `sql-4-seguridad.sql` | Límite de reservas por cliente, secreto del webhook y consentimiento de privacidad |
+
+Los SQL se corren en ese orden en el SQL Editor de Supabase. La dirección del webhook de Make
+y el correo del administrador se configuran aparte en la tabla `config_app` (no están en el repositorio).
 
 ## Modelo de datos (Parte A)
 
@@ -92,6 +101,21 @@ Relaciones: USUARIO 1 — N RESERVA · MESA 1 — N RESERVA.
 
 ## Seguridad
 
-- La clave de `config.js` es la **clave pública** de Supabase: está pensada para usarse en el navegador.
-  La protección de los datos la dan las reglas de la base (RLS).
-- Las claves secretas nunca se guardan en este repositorio.
+| Medida | Qué protege |
+|---|---|
+| Supabase Auth (contraseñas con hash, sesiones JWT) | Autenticación segura; nadie ve las contraseñas |
+| Confirmación de correo al registrarse | Que nadie cree cuentas con correos ajenos |
+| Contraseñas de 8+ caracteres con letras y números | Contraseñas débiles |
+| Row Level Security (RLS) en todas las tablas | Cada cliente ve solo lo suyo, aunque manipule el navegador |
+| Permisos por columna en `usuario` | Escalada de privilegios (nadie se hace admin solo) |
+| Validaciones en la base (superposición, capacidad, fechas) | Saltarse el formulario no sirve |
+| Máximo 3 reservas futuras por cliente | Abuso / bloqueo del restaurante con reservas falsas |
+| Funciones internas sin permiso de ejecución externa | Uso indebido de la automatización |
+| Secreto compartido entre la base y Make | Correos falsos enviados desde la cuenta de Marea |
+| Escape de texto en el panel (anti-XSS) | Inyección de código a través de nombres |
+| Encabezados CSP, X-Frame-Options, nosniff | Scripts de terceros, clickjacking |
+| HTTPS en todos los servicios | Datos interceptados en tránsito |
+| Clave pública en el sitio, claves secretas fuera del repositorio | Filtración de credenciales |
+| Política de privacidad y consentimiento registrado | Cumplimiento de la Ley 18.331 |
+
+**Mejoras futuras:** registro de auditoría (quién cambió cada reserva) y verificación en dos pasos para el administrador.
