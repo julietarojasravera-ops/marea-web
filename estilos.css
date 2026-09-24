@@ -1,0 +1,334 @@
+/* =========================================================
+   MAREA — estilos del sitio
+   Paleta y tipografías en variables: cambiar acá cambia todo
+   ========================================================= */
+
+:root {
+  --azul-noche: #081c30;
+  --azul-marea: #0e2a47;
+  --azul-ola: #1d4a73;
+  --arena: #e6d3ad;
+  --arena-clara: #f6efe2;
+  --espuma: #ffffff;
+  --tinta: #1b2733;
+  --gris-suave: #6b7785;
+  --coral: #c8553d;
+  --verde-alga: #3f7d5c;
+
+  --fuente-titulo: "Fraunces", Georgia, serif;
+  --fuente-texto: "Inter", system-ui, sans-serif;
+
+  --radio: 18px;
+  --sombra: 0 18px 40px -18px rgba(8, 28, 48, 0.35);
+}
+
+body {
+  font-family: var(--fuente-texto);
+  color: var(--tinta);
+  background: var(--arena-clara);
+}
+
+h1, h2, h3, .titulo {
+  font-family: var(--fuente-titulo);
+  font-weight: 500;
+}
+
+a { color: var(--azul-ola); }
+
+.oculto { display: none !important; }
+
+/* ---------- Navegación ---------- */
+.nav-marea {
+  padding: 1.1rem 0;
+  background: var(--azul-noche);
+}
+.nav-marea.sobre-hero {
+  position: absolute;
+  inset: 0 0 auto 0;
+  background: transparent;
+  z-index: 10;
+}
+.marca {
+  font-family: var(--fuente-titulo);
+  font-size: 1.6rem;
+  letter-spacing: 0.35em;
+  color: var(--espuma);
+  text-decoration: none;
+}
+.marca:hover { color: var(--arena); }
+.nav-enlaces {
+  display: flex;
+  gap: 1.4rem;
+  align-items: center;
+}
+.nav-enlaces a,
+.enlace-boton {
+  color: var(--espuma);
+  text-decoration: none;
+  font-size: 0.95rem;
+  background: none;
+  border: 0;
+  padding: 0;
+  opacity: 0.85;
+}
+.nav-enlaces a:hover,
+.enlace-boton:hover { opacity: 1; color: var(--arena); }
+
+/* ---------- Portada ---------- */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  color: var(--espuma);
+  background:
+    radial-gradient(ellipse at 80% 15%, rgba(230, 211, 173, 0.28), transparent 45%),
+    radial-gradient(ellipse at 10% 90%, rgba(29, 74, 115, 0.9), transparent 60%),
+    linear-gradient(170deg, var(--azul-noche) 0%, var(--azul-marea) 55%, var(--azul-ola) 100%);
+  overflow: hidden;
+}
+.hero-luna {
+  position: absolute;
+  top: 16%;
+  right: 12%;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: var(--arena);
+  box-shadow: 0 0 80px 20px rgba(230, 211, 173, 0.35);
+}
+.hero-contenido {
+  position: relative;
+  z-index: 2;
+  max-width: 780px;
+  padding-top: 5rem;
+  padding-bottom: 6rem;
+}
+.hero-etiqueta {
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  color: var(--arena);
+}
+.hero h1 {
+  font-size: clamp(2.4rem, 6vw, 4.6rem);
+  line-height: 1.05;
+  margin: 1rem 0 1.4rem;
+}
+.hero p {
+  font-size: 1.15rem;
+  opacity: 0.85;
+  max-width: 560px;
+}
+.hero-horario {
+  font-size: 0.95rem;
+  opacity: 0.75;
+  margin-left: 1rem;
+}
+.hero-ola {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 120px;
+  z-index: 1;
+}
+.hero-ola path { fill: var(--arena-clara); }
+
+/* ---------- Botones ---------- */
+.btn-marea {
+  display: inline-block;
+  background: var(--arena);
+  color: var(--azul-noche);
+  border: 0;
+  border-radius: 999px;
+  padding: 0.95rem 2.2rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-marea:hover {
+  color: var(--azul-noche);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -10px rgba(230, 211, 173, 0.7);
+}
+.btn-marea:disabled { opacity: 0.6; transform: none; }
+.btn-marea.oscuro {
+  background: var(--azul-marea);
+  color: var(--espuma);
+}
+.btn-marea.oscuro:hover { color: var(--espuma); box-shadow: var(--sombra); }
+.btn-marea.ancho { width: 100%; }
+.btn-borde {
+  background: transparent;
+  border: 1.5px solid var(--azul-marea);
+  color: var(--azul-marea);
+  border-radius: 999px;
+  padding: 0.45rem 1.1rem;
+  font-size: 0.9rem;
+}
+.btn-borde:hover { background: var(--azul-marea); color: var(--espuma); }
+.btn-peligro { border-color: var(--coral); color: var(--coral); }
+.btn-peligro:hover { background: var(--coral); color: var(--espuma); }
+
+/* ---------- Secciones de la portada ---------- */
+.seccion { padding: 5rem 0; }
+.seccion-titulo {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  color: var(--azul-marea);
+  margin-bottom: 2.5rem;
+}
+.rasgo {
+  border-top: 2px solid var(--arena);
+  padding-top: 1.2rem;
+}
+.rasgo-numero {
+  font-family: var(--fuente-titulo);
+  color: var(--arena);
+  font-size: 2.4rem;
+  line-height: 1;
+}
+.rasgo h3 { color: var(--azul-marea); font-size: 1.4rem; margin: 0.6rem 0; }
+.rasgo p { color: var(--gris-suave); }
+
+.franja-reserva {
+  background: var(--azul-marea);
+  color: var(--espuma);
+  border-radius: var(--radio);
+  padding: 3rem;
+}
+.franja-reserva h2 { font-size: 2rem; }
+.franja-reserva p { opacity: 0.8; margin: 0; }
+
+.pie {
+  padding: 2rem 0;
+  color: var(--gris-suave);
+  font-size: 0.9rem;
+}
+
+/* ---------- Páginas internas ---------- */
+.pagina {
+  min-height: calc(100vh - 72px);
+  padding: 3.5rem 0 4rem;
+}
+.pagina-titulo {
+  color: var(--azul-marea);
+  font-size: clamp(2rem, 4vw, 2.8rem);
+}
+.pagina-bajada { color: var(--gris-suave); }
+
+.tarjeta {
+  background: var(--espuma);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 2rem;
+}
+.tarjeta-angosta { max-width: 460px; margin: 0 auto; }
+.tarjeta-media { max-width: 620px; margin: 0 auto; }
+
+.form-label { font-weight: 500; color: var(--azul-marea); }
+.form-control,
+.form-select {
+  border-radius: 12px;
+  border-color: #d9d2c3;
+  padding: 0.7rem 0.9rem;
+}
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--azul-ola);
+  box-shadow: 0 0 0 0.2rem rgba(29, 74, 115, 0.15);
+}
+
+/* Pestañas de ingreso / registro */
+.pestanas {
+  display: flex;
+  background: var(--arena-clara);
+  border-radius: 999px;
+  padding: 4px;
+  margin-bottom: 1.6rem;
+}
+.pestana {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  padding: 0.6rem;
+  font-weight: 500;
+  color: var(--gris-suave);
+}
+.pestana.activa {
+  background: var(--azul-marea);
+  color: var(--espuma);
+}
+
+/* Avisos */
+.aviso {
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+}
+.aviso-error { background: #fbe9e5; color: #8a2f1e; border-left: 4px solid var(--coral); }
+.aviso-ok { background: #e6f2eb; color: #24513a; border-left: 4px solid var(--verde-alga); }
+.aviso-info { background: #e8eef5; color: var(--azul-marea); border-left: 4px solid var(--azul-ola); }
+
+/* Resultado de disponibilidad */
+.resultado {
+  margin-top: 1.6rem;
+  padding: 1.4rem;
+  border-radius: var(--radio);
+  background: var(--arena-clara);
+}
+.resultado h3 { color: var(--azul-marea); font-size: 1.5rem; }
+
+/* Lista de reservas */
+.grupo-titulo {
+  font-family: var(--fuente-titulo);
+  color: var(--azul-marea);
+  font-size: 1.5rem;
+  margin: 2.2rem 0 1rem;
+}
+.reserva-item {
+  background: var(--espuma);
+  border-radius: 14px;
+  padding: 1.1rem 1.3rem;
+  box-shadow: 0 8px 20px -14px rgba(8, 28, 48, 0.4);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
+  flex-wrap: wrap;
+}
+.reserva-fecha { font-weight: 600; color: var(--azul-marea); text-transform: capitalize; }
+.reserva-detalle { color: var(--gris-suave); font-size: 0.92rem; }
+.reserva-item.pasada { opacity: 0.7; }
+.reserva-acciones { display: flex; gap: 0.6rem; align-items: center; }
+
+.estado {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.estado-confirmada { background: #e6f2eb; color: #24513a; }
+.estado-cancelada { background: #fbe9e5; color: #8a2f1e; }
+.estado-completada { background: #e8eef5; color: var(--azul-marea); }
+.estado-no_asistio { background: #efeae0; color: #6b5a36; }
+
+.vacio {
+  text-align: center;
+  color: var(--gris-suave);
+  padding: 2rem;
+  border: 1.5px dashed #d9d2c3;
+  border-radius: var(--radio);
+}
+
+@media (max-width: 576px) {
+  .nav-enlaces { gap: 0.9rem; }
+  .marca { font-size: 1.25rem; letter-spacing: 0.25em; }
+  .tarjeta, .franja-reserva { padding: 1.4rem; }
+  .hero-luna { width: 60px; height: 60px; }
+  .hero-horario { display: block; margin: 1rem 0 0; }
+}

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Marea · Cocina de mar</title>
+  <meta name="description" content="Marea, restaurante de cocina de mar en la costa atlántica uruguaya. Reservá tu mesa online.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="css/estilos.css" rel="stylesheet">
+</head>
+<body>
+
+  <nav class="nav-marea sobre-hero">
+    <div class="container d-flex justify-content-between align-items-center">
+      <a class="marca" href="index.html">MAREA</a>
+      <div class="nav-enlaces" id="menu"></div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-luna" aria-hidden="true"></div>
+    <div class="container">
+      <div class="hero-contenido">
+        <div class="hero-etiqueta">Restaurante · Costa atlántica uruguaya</div>
+        <h1>Cocina de mar, sobremesa larga y viento del Atlántico</h1>
+        <p>Pescados del día, fuego lento y una carta que acompaña la marea. Venís a cenar y te quedás charlando hasta la medianoche.</p>
+        <div class="mt-4">
+          <a class="btn-marea" href="reservar.html">Reservar mesa</a>
+          <span class="hero-horario">Cenas de 19 a 00 h</span>
+        </div>
+      </div>
+    </div>
+    <svg class="hero-ola" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0,64 C240,120 480,0 720,48 C960,96 1200,24 1440,64 L1440,120 L0,120 Z"></path>
+    </svg>
+  </header>
+
+  <section class="seccion">
+    <div class="container">
+      <h2 class="seccion-titulo">Lo que nos mueve</h2>
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="rasgo">
+            <div class="rasgo-numero">01</div>
+            <h3>Pesca del día</h3>
+            <p>Trabajamos con pescadores de la zona. La carta cambia según lo que trae el mar.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="rasgo">
+            <div class="rasgo-numero">02</div>
+            <h3>Fuego lento</h3>
+            <p>Brasas suaves y tiempos largos, para que cada plato tenga su punto justo.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="rasgo">
+            <div class="rasgo-numero">03</div>
+            <h3>Sobremesa sin apuro</h3>
+            <p>Cada mesa es tuya por dos horas. Reservá online y llegá tranquilo.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pb-5">
+    <div class="container">
+      <div class="franja-reserva d-md-flex justify-content-between align-items-center gap-4">
+        <div>
+          <h2>¿Venís esta noche?</h2>
+          <p>Mirá la disponibilidad en segundos y asegurá tu mesa.</p>
+        </div>
+        <a class="btn-marea mt-3 mt-md-0" href="reservar.html">Reservar mesa</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="pie">
+    <div class="container d-flex justify-content-between flex-wrap gap-2">
+      <span>Marea · Costa atlántica uruguaya</span>
+      <span>Cenas de martes a domingo, de 19 a 00 h</span>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/comun.js"></script>
+</body>
+</html>
