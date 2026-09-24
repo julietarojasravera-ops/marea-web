@@ -20,13 +20,170 @@
   </nav>
 
   <main class="pagina">
-    <div class="container tarjeta-media">
-      <h1 class="pagina-titulo mb-1">Panel de administración</h1>
-      <p class="pagina-bajada" id="saludo"></p>
-      <div class="vacio mt-4">
-        Acá van a estar las mesas, todas las reservas y el dashboard de ocupación.<br>
-        Llegan en la próxima versión.
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
+        <div>
+          <h1 class="pagina-titulo mb-1">Panel de administración</h1>
+          <p class="pagina-bajada mb-0" id="saludo"></p>
+        </div>
+        <div class="pestanas pestanas-admin mb-0">
+          <button type="button" class="pestana activa" data-seccion="dashboard">Dashboard</button>
+          <button type="button" class="pestana" data-seccion="reservas">Reservas</button>
+          <button type="button" class="pestana" data-seccion="mesas">Mesas</button>
+        </div>
       </div>
+
+      <div id="aviso-admin" class="oculto" role="alert"></div>
+
+      <!-- ================= DASHBOARD ================= -->
+      <section id="sec-dashboard" class="seccion-admin">
+        <div class="d-flex align-items-center gap-3 flex-wrap mb-4">
+          <label class="form-label mb-0" for="dash-fecha">Día</label>
+          <input class="form-control campo-fecha" type="date" id="dash-fecha">
+        </div>
+
+        <div id="alerta-ocupacion" class="alerta-ocupacion oculto" role="alert"></div>
+
+        <div class="row g-3">
+          <div class="col-6 col-lg-3">
+            <div class="kpi">
+              <div class="kpi-valor" id="kpi-reservas">–</div>
+              <div class="kpi-nombre">Reservas del día</div>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="kpi">
+              <div class="kpi-valor" id="kpi-personas">–</div>
+              <div class="kpi-nombre">Personas esperadas</div>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="kpi kpi-destacado" id="kpi-ocupacion-caja">
+              <div class="kpi-valor" id="kpi-ocupacion">–</div>
+              <div class="kpi-nombre">Ocupación en hora pico</div>
+              <div class="kpi-nota" id="kpi-ocupacion-nota"></div>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="kpi">
+              <div class="kpi-valor" id="kpi-canceladas">–</div>
+              <div class="kpi-nombre">Cancelaciones</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta mt-4">
+          <h2 class="grupo-titulo mt-0">Reservas por horario</h2>
+          <p class="pagina-bajada">Cuántas reservas empiezan en cada horario. Sirve para ver los momentos de mayor demanda.</p>
+          <div class="grafico" id="grafico-horas"></div>
+        </div>
+      </section>
+
+      <!-- ================= RESERVAS ================= -->
+      <section id="sec-reservas" class="seccion-admin oculto">
+        <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-3">
+          <div class="d-flex gap-3 flex-wrap align-items-end">
+            <div>
+              <label class="form-label" for="filtro-fecha">Día</label>
+              <input class="form-control campo-fecha" type="date" id="filtro-fecha">
+            </div>
+            <div>
+              <label class="form-label" for="filtro-estado">Estado</label>
+              <select class="form-select" id="filtro-estado">
+                <option value="">Todos</option>
+                <option value="confirmada">Confirmada</option>
+                <option value="cancelada">Cancelada</option>
+                <option value="completada">Completada</option>
+                <option value="no_asistio">No asistió</option>
+              </select>
+            </div>
+            <button type="button" class="btn-borde" id="btn-ver-todas">Ver todos los días</button>
+          </div>
+          <button type="button" class="btn-marea oscuro" id="btn-nueva-reserva">Nueva reserva</button>
+        </div>
+
+        <!-- Formulario para crear o editar -->
+        <div id="panel-reserva" class="tarjeta mb-4 oculto">
+          <h2 class="grupo-titulo mt-0" id="panel-reserva-titulo">Nueva reserva</h2>
+          <form id="form-reserva">
+            <div class="row g-3">
+              <div class="col-md-4" id="grupo-cliente">
+                <label class="form-label" for="r-cliente">Cliente</label>
+                <select class="form-select" id="r-cliente" required></select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label" for="r-fecha">Día</label>
+                <input class="form-control" type="date" id="r-fecha" required>
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label" for="r-hora">Hora</label>
+                <select class="form-select" id="r-hora" required></select>
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label" for="r-personas">Personas</label>
+                <input class="form-control" type="number" id="r-personas" min="1" max="20" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="r-mesa">Mesa</label>
+                <select class="form-select" id="r-mesa"></select>
+              </div>
+            </div>
+            <div class="d-flex gap-3 mt-4 flex-wrap">
+              <button type="submit" class="btn-marea oscuro">Guardar</button>
+              <button type="button" class="btn-borde" id="btn-cerrar-panel">Cancelar</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="tabla-caja">
+          <table class="table tabla-marea align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Día</th>
+                <th>Hora</th>
+                <th>Pers.</th>
+                <th>Mesa</th>
+                <th>Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tabla-reservas"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= MESAS ================= -->
+      <section id="sec-mesas" class="seccion-admin oculto">
+        <div class="tarjeta mb-4">
+          <h2 class="grupo-titulo mt-0">Agregar mesa</h2>
+          <form id="form-mesa" class="d-flex gap-3 flex-wrap align-items-end">
+            <div>
+              <label class="form-label" for="m-numero">Número</label>
+              <input class="form-control campo-corto" type="number" id="m-numero" min="1" required>
+            </div>
+            <div>
+              <label class="form-label" for="m-capacidad">Capacidad</label>
+              <input class="form-control campo-corto" type="number" id="m-capacidad" min="1" max="20" required>
+            </div>
+            <button type="submit" class="btn-marea oscuro">Agregar</button>
+          </form>
+        </div>
+
+        <div class="tabla-caja">
+          <table class="table tabla-marea align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Mesa</th>
+                <th>Capacidad</th>
+                <th>Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tabla-mesas"></tbody>
+          </table>
+        </div>
+      </section>
     </div>
   </main>
 

@@ -300,7 +300,8 @@ a { color: var(--azul-ola); }
   margin-bottom: 0.8rem;
   flex-wrap: wrap;
 }
-.reserva-fecha { font-weight: 600; color: var(--azul-marea); text-transform: capitalize; }
+.reserva-fecha { font-weight: 600; color: var(--azul-marea); }
+.reserva-fecha::first-letter, .celda-fecha::first-letter { text-transform: uppercase; }
 .reserva-detalle { color: var(--gris-suave); font-size: 0.92rem; }
 .reserva-item.pasada { opacity: 0.7; }
 .reserva-acciones { display: flex; gap: 0.6rem; align-items: center; }
@@ -331,4 +332,117 @@ a { color: var(--azul-ola); }
   .tarjeta, .franja-reserva { padding: 1.4rem; }
   .hero-luna { width: 60px; height: 60px; }
   .hero-horario { display: block; margin: 1rem 0 0; }
+}
+
+/* =========================================================
+   PANEL ADMIN
+   ========================================================= */
+.pestanas-admin { min-width: 340px; }
+.texto-suave { color: var(--gris-suave); }
+.campo-fecha { max-width: 190px; }
+.campo-corto { max-width: 100px; }
+
+/* Tarjetas de indicadores (KPI) */
+.kpi {
+  background: var(--espuma);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 1.4rem 1.5rem;
+  height: 100%;
+  border-top: 4px solid var(--arena);
+}
+.kpi-valor {
+  font-family: var(--fuente-titulo);
+  font-size: 2.6rem;
+  line-height: 1;
+  color: var(--azul-marea);
+}
+.kpi-nombre { color: var(--gris-suave); margin-top: 0.4rem; font-size: 0.92rem; }
+.kpi-nota { color: var(--azul-ola); font-size: 0.82rem; margin-top: 0.3rem; }
+.kpi-destacado { border-top-color: var(--azul-ola); }
+.kpi-alerta { border-top-color: var(--coral); background: #fff6f3; }
+.kpi-alerta .kpi-valor { color: var(--coral); }
+
+/* Alerta del 80 % */
+.alerta-ocupacion {
+  background: var(--coral);
+  color: var(--espuma);
+  border-radius: 14px;
+  padding: 1rem 1.3rem;
+  font-weight: 600;
+  margin-bottom: 1.4rem;
+  box-shadow: 0 12px 24px -14px rgba(200, 85, 61, 0.8);
+}
+
+/* Gráfico de barras hecho con CSS */
+.grafico {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.8rem;
+  padding-top: 1rem;
+}
+.barra-col { flex: 1; text-align: center; }
+.barra-valor { font-weight: 600; color: var(--azul-marea); font-size: 0.9rem; }
+.barra-pista {
+  height: 180px;
+  display: flex;
+  align-items: flex-end;
+  background: var(--arena-clara);
+  border-radius: 10px;
+  margin: 0.4rem 0;
+  overflow: hidden;
+}
+.barra {
+  width: 100%;
+  background: var(--azul-ola);
+  border-radius: 10px 10px 0 0;
+  transition: height 0.4s ease;
+}
+.barra-max { background: var(--azul-marea); }
+.barra-etiqueta { color: var(--gris-suave); font-size: 0.85rem; }
+.barra-h-0 { height: 0; }
+.barra-h-1 { height: 10%; }
+.barra-h-2 { height: 20%; }
+.barra-h-3 { height: 30%; }
+.barra-h-4 { height: 40%; }
+.barra-h-5 { height: 50%; }
+.barra-h-6 { height: 60%; }
+.barra-h-7 { height: 70%; }
+.barra-h-8 { height: 80%; }
+.barra-h-9 { height: 90%; }
+.barra-h-10 { height: 100%; }
+
+/* Tablas */
+.tabla-caja {
+  background: var(--espuma);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  overflow-x: auto;
+  padding: 0.5rem 1rem;
+}
+.tabla-marea th {
+  color: var(--gris-suave);
+  font-weight: 500;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom-color: var(--arena);
+}
+.tabla-marea td { border-bottom-color: #efe8da; }
+.celda-principal { font-weight: 600; color: var(--azul-marea); }
+.celda-secundaria { color: var(--gris-suave); font-size: 0.82rem; }
+.celda-fecha { white-space: nowrap; }
+.selector-estado {
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  min-width: 130px;
+  border: 0;
+}
+
+@media (max-width: 576px) {
+  .pestanas-admin { min-width: 100%; }
+  .kpi-valor { font-size: 2rem; }
+  .grafico { gap: 0.4rem; }
+  .barra-pista { height: 130px; }
 }
