@@ -40,6 +40,23 @@
             <input class="form-control" type="password" id="ingreso-clave" required autocomplete="current-password">
           </div>
           <button type="submit" class="btn-marea oscuro ancho">Ingresar</button>
+          <div class="text-center mt-3">
+            <button type="button" class="enlace-olvide" id="btn-olvide">¿Olvidaste tu contraseña?</button>
+          </div>
+        </form>
+
+        <form id="form-recuperar" class="oculto">
+          <p class="pagina-bajada mb-3">
+            Escribí el correo de tu cuenta y te mandamos un enlace para crear una contraseña nueva.
+          </p>
+          <div class="mb-4">
+            <label class="form-label" for="recuperar-email">Correo</label>
+            <input class="form-control" type="email" id="recuperar-email" required autocomplete="email">
+          </div>
+          <button type="submit" class="btn-marea oscuro ancho">Enviar enlace</button>
+          <div class="text-center mt-3">
+            <button type="button" class="enlace-olvide" id="btn-volver-ingreso">Volver a ingresar</button>
+          </div>
         </form>
 
         <form id="form-registro" class="oculto">

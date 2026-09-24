@@ -7,20 +7,51 @@ const volverA = params.get("volver");
 
 const formIngreso = document.getElementById("form-ingreso");
 const formRegistro = document.getElementById("form-registro");
+const formRecuperar = document.getElementById("form-recuperar");
 const pestanaIngreso = document.getElementById("pestana-ingreso");
 const pestanaRegistro = document.getElementById("pestana-registro");
 
+// cual: "ingreso" | "registro" | "recuperar"
 function mostrarPestana(cual) {
-  const esIngreso = cual === "ingreso";
-  formIngreso.classList.toggle("oculto", !esIngreso);
-  formRegistro.classList.toggle("oculto", esIngreso);
-  pestanaIngreso.classList.toggle("activa", esIngreso);
-  pestanaRegistro.classList.toggle("activa", !esIngreso);
+  formIngreso.classList.toggle("oculto", cual !== "ingreso");
+  formRegistro.classList.toggle("oculto", cual !== "registro");
+  formRecuperar.classList.toggle("oculto", cual !== "recuperar");
+  pestanaIngreso.classList.toggle("activa", cual !== "registro");
+  pestanaRegistro.classList.toggle("activa", cual === "registro");
   ocultarAviso("aviso-login");
 }
 
 pestanaIngreso.addEventListener("click", () => mostrarPestana("ingreso"));
 pestanaRegistro.addEventListener("click", () => mostrarPestana("registro"));
+
+// ---------- Olvidé mi contraseña ----------
+document.getElementById("btn-olvide").addEventListener("click", () => {
+  document.getElementById("recuperar-email").value =
+    document.getElementById("ingreso-email").value.trim();
+  mostrarPestana("recuperar");
+});
+document.getElementById("btn-volver-ingreso").addEventListener("click", () => mostrarPestana("ingreso"));
+
+formRecuperar.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const boton = formRecuperar.querySelector("button[type=submit]");
+  boton.disabled = true;
+  ocultarAviso("aviso-login");
+
+  const { error } = await db.auth.resetPasswordForEmail(
+    document.getElementById("recuperar-email").value.trim(),
+    { redirectTo: `${location.origin}/nueva-clave.html` }
+  );
+  boton.disabled = false;
+
+  if (error) {
+    mostrarAviso("aviso-login", "error", mensajeDeError(error));
+    return;
+  }
+  // Mismo mensaje exista o no la cuenta: así nadie puede averiguar qué correos están registrados
+  mostrarAviso("aviso-login", "ok",
+    "Si ese correo tiene una cuenta, te llega un enlace en unos minutos. Revisá también Spam.");
+});
 
 // Después de entrar: volver a la página pedida o ir a la del rol
 async function redirigir(sesion) {
@@ -107,4 +138,5 @@ formRegistro.addEventListener("submit", async (e) => {
   const sesion = await obtenerSesion();
   if (sesion) await redirigir(sesion);
   if (params.get("modo") === "registro") mostrarPestana("registro");
+  if (params.get("modo") === "recuperar") mostrarPestana("recuperar");
 })();

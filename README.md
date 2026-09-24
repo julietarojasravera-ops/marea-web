@@ -17,7 +17,7 @@ Proyecto académico — Incorporación Estratégica · Universidad ORT Uruguay.
 ## Qué hace (Parte A)
 
 **Cliente**
-- Se registra e inicia sesión.
+- Se registra e inicia sesión, y puede recuperar su contraseña por correo.
 - Consulta disponibilidad por fecha, horario y cantidad de personas.
 - Reserva: el sistema asigna automáticamente la mesa más chica que sirva.
 - Ve sus reservas (próximas y pasadas) y puede cancelarlas.
@@ -73,7 +73,8 @@ Navegador ──► Vercel (sitio) ──► Supabase (Auth + API + PostgreSQL)
 | Archivo | Qué es |
 |---|---|
 | `index.html` | Portada del restaurante |
-| `login.html` / `login.js` | Ingreso y registro |
+| `login.html` / `login.js` | Ingreso, registro y pedido de recuperación de contraseña |
+| `nueva-clave.html` / `nueva-clave.js` | Crear contraseña nueva desde el enlace del correo |
 | `reservar.html` / `reservar.js` | Consulta de disponibilidad y reserva |
 | `mis-reservas.html` / `mis-reservas.js` | Reservas del cliente |
 | `admin.html` / `admin.js` | Panel: Dashboard, Reservas, Mesas, Clientes |

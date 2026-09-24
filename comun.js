@@ -90,6 +90,8 @@ function mensajeDeError(error) {
   if (m.includes("Email not confirmed")) return "Todavía no confirmaste tu correo. Revisá tu bandeja de entrada.";
   if (m.includes("User already registered")) return "Ya existe una cuenta con ese correo. Probá ingresar.";
   if (m.includes("Password should")) return "La contraseña tiene que tener al menos 8 caracteres, con letras y números.";
+  if (m.includes("New password should be different")) return "La contraseña nueva tiene que ser distinta a la anterior.";
+  if (m.includes("not authorized")) return "No pudimos enviar el correo a esa dirección. Avisale al restaurante.";
   if (m.includes("rate limit") || m.includes("too many")) return "Demasiados intentos seguidos. Esperá unos minutos y probá de nuevo.";
   if (m.includes("exclusion constraint") || m.includes("sin_superposicion"))
     return "Esa mesa se acaba de ocupar. Probá de nuevo.";
@@ -126,5 +128,13 @@ function hoyISO() {
   const dd = String(h.getDate()).padStart(2, "0");
   return `${h.getFullYear()}-${mm}-${dd}`;
 }
+
+// Si alguien entra desde el enlace de "olvidé mi contraseña" y Supabase
+// lo manda a otra página, lo llevamos a la página para crear la clave nueva
+db.auth.onAuthStateChange((evento) => {
+  if (evento === "PASSWORD_RECOVERY" && !location.pathname.endsWith("nueva-clave.html")) {
+    location.replace("nueva-clave.html");
+  }
+});
 
 document.addEventListener("DOMContentLoaded", pintarMenu);
