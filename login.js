@@ -3,7 +3,8 @@
 // =========================================================
 
 const params = new URLSearchParams(location.search);
-const volverA = params.get("volver");
+// Solo se permite volver a páginas de este mismo sitio (evita redirecciones a sitios falsos)
+const volverA = /^[a-z-]+\.html$/.test(params.get("volver") || "") ? params.get("volver") : null;
 
 const formIngreso = document.getElementById("form-ingreso");
 const formRegistro = document.getElementById("form-registro");

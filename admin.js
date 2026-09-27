@@ -60,6 +60,7 @@ document.querySelectorAll("[data-seccion]").forEach((boton) => {
     if (boton.dataset.seccion === "reservas") cargarReservas();
     if (boton.dataset.seccion === "mesas") { pintarMesas(); pintarTiempos(); }
     if (boton.dataset.seccion === "clientes") cargarClientesTabla();
+    if (boton.dataset.seccion === "equipo") cargarEquipo();
   });
 });
 

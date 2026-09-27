@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Invitación · Marea</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="estilos.css" rel="stylesheet">
+</head>
+<body>
+
+  <nav class="nav-marea">
+    <div class="container d-flex justify-content-between align-items-center">
+      <a class="marca" href="index.html">MAREA</a>
+      <div class="nav-enlaces" id="menu"></div>
+    </div>
+  </nav>
+
+  <main class="pagina">
+    <div class="container">
+      <div class="tarjeta tarjeta-angosta text-center">
+        <h1 class="pagina-titulo mb-2">Invitación al equipo</h1>
+        <p class="pagina-bajada mb-4" id="inv-texto">Un momento…</p>
+
+        <div id="inv-sin-sesion" class="oculto">
+          <p class="mb-3">Para aceptarla, entrá con el <b>mismo correo</b> al que te llegó la invitación.
+            Si todavía no tenés cuenta, creala con ese correo.</p>
+          <div class="d-flex gap-2 justify-content-center flex-wrap">
+            <a class="btn-marea oscuro" id="inv-ingresar" href="login.html">Ingresar</a>
+            <a class="btn-marea" id="inv-registrarse" href="login.html?modo=registro">Crear cuenta</a>
+          </div>
+          <p class="ayuda-campo mt-3">Si tenés que confirmar tu correo, después volvé a abrir el enlace de la invitación.</p>
+        </div>
+
+        <div id="inv-con-sesion" class="oculto">
+          <button type="button" class="btn-marea oscuro" id="btn-aceptar">Aceptar invitación</button>
+        </div>
+
+        <div id="aviso-inv" class="oculto text-start" role="alert"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="comun.js"></script>
+  <script src="invitacion.js"></script>
+</body>
+</html>

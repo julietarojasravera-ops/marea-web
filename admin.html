@@ -31,6 +31,7 @@
           <button type="button" class="pestana" data-seccion="reservas">Reservas</button>
           <button type="button" class="pestana" data-seccion="mesas">Mesas</button>
           <button type="button" class="pestana" data-seccion="clientes">Clientes</button>
+          <button type="button" class="pestana" data-seccion="equipo">Equipo</button>
         </div>
       </div>
 
@@ -379,6 +380,47 @@
           </table>
         </div>
       </section>
+      <!-- ================= EQUIPO ================= -->
+      <section id="sec-equipo" class="seccion-admin oculto">
+        <div class="row g-4">
+          <div class="col-lg-7">
+            <div class="tarjeta h-100">
+              <h2 class="grupo-titulo mt-0">Administradores</h2>
+              <p class="pagina-bajada">Tienen acceso a este panel. Nadie puede quitarse el rol a sí mismo y siempre queda al menos uno.</p>
+              <div id="lista-admins"></div>
+            </div>
+          </div>
+          <div class="col-lg-5">
+            <div class="tarjeta h-100">
+              <h2 class="grupo-titulo mt-0">Invitar administrador</h2>
+              <p class="pagina-bajada">
+                Le llega un enlace por correo. Sirve <b>una sola vez</b>, vence en <b>48 horas</b>
+                y solo funciona con <b>ese correo</b>.
+              </p>
+              <form id="form-invitar" class="d-flex gap-2 flex-wrap align-items-end">
+                <div class="flex-grow-1">
+                  <label class="form-label" for="invitar-email">Correo</label>
+                  <input class="form-control" type="email" id="invitar-email" required placeholder="nombre@correo.com">
+                </div>
+                <button type="submit" class="btn-marea oscuro">Enviar invitación</button>
+              </form>
+              <h3 class="subtitulo-tiempos mt-4">Invitaciones</h3>
+              <div id="lista-invitaciones"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tarjeta mt-4">
+          <h2 class="grupo-titulo mt-0">Registro de cambios de rol</h2>
+          <p class="pagina-bajada">Auditoría: queda registrado cada vez que alguien pasa a ser administrador o deja de serlo.</p>
+          <div class="tabla-simple">
+            <table class="table tabla-marea align-middle mb-0">
+              <thead><tr><th>Fecha</th><th>Persona</th><th>Cambio</th><th>Hecho por</th></tr></thead>
+              <tbody id="tabla-auditoria"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
     </div>
   </main>
 
@@ -388,5 +430,6 @@
   <script src="plano.js"></script>
   <script src="admin.js"></script>
   <script src="admin-salon.js"></script>
+  <script src="admin-equipo.js"></script>
 </body>
 </html>

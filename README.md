@@ -35,6 +35,7 @@ Proyecto académico — Incorporación Estratégica · Universidad ORT Uruguay.
 - **Reservas:** filtros por día y estado, buscador por nombre, correo o teléfono, creación y edición (con ocasión y comentarios) y **exportar a CSV** (Excel / Google Sheets).
 - **Mesas:** plano del local para acomodar las mesas arrastrándolas, capacidad, forma, activar/desactivar, y **tiempos de mesa** configurables.
 - **Clientes:** listado con teléfono, reservas, asistencias, cancelaciones, última visita y próxima reserva.
+- **Equipo:** administradores por **invitación segura**, invitaciones pendientes (revocables) y registro de cambios de rol.
 - **Alerta de ocupación:** aviso en el panel y por correo cuando un horario llega al 80 %.
 
 ## Tiempos de mesa (como los sistemas profesionales)
@@ -100,6 +101,8 @@ Navegador ──► Vercel (sitio) ──► Supabase (Auth + API + PostgreSQL)
 | `mis-reservas.html` / `mis-reservas.js` | Reservas del cliente |
 | `admin.html` / `admin.js` | Panel: Dashboard, Reservas, Mesas, Clientes |
 | `admin-salon.js` | Salón en vivo, línea de tiempo y próximas llegadas del panel |
+| `admin-equipo.js` | Pestaña Equipo: administradores, invitaciones y auditoría |
+| `invitacion.html` / `invitacion.js` | Aceptar una invitación para ser administrador |
 | `comun.js` | Funciones compartidas (sesión, roles, mensajes, tiempos de mesa) |
 | `plano.js` | Dibuja el plano del local (elegir mesa y editor del admin) |
 | `config.js` | Conexión a Supabase (clave pública) |
@@ -113,6 +116,7 @@ Navegador ──► Vercel (sitio) ──► Supabase (Auth + API + PostgreSQL)
 | `sql-5-tiempos-de-mesa.sql` | Tiempo de mesa por grupo, limpieza, cierre, ritmo de cocina, estado sentada, extender |
 | `sql-6-plano-y-alternativas.sql` | Forma y ubicación de las mesas, estado de cada mesa, elegir mesa y horarios alternativos |
 | `sql-7-profesional.sql` | 20 mesas con zonas, mesa justa por grupo, ocasión y comentarios, teléfono del cliente |
+| `sql-8-invitaciones-admin.sql` | Invitaciones de administradores (enlace único, cifrado, 48 h) y auditoría de roles |
 
 Los SQL se corren en ese orden en el SQL Editor de Supabase. Las cuentas de administradores se crean con un script aparte que **no** está en el repositorio (tiene contraseñas). La dirección del webhook de Make
 y el correo del administrador se configuran aparte en la tabla `config_app` (no están en el repositorio).
@@ -145,5 +149,8 @@ Relaciones: USUARIO 1 — N RESERVA · MESA 1 — N RESERVA.
 | HTTPS en todos los servicios | Datos interceptados en tránsito |
 | Clave pública en el sitio, claves secretas fuera del repositorio | Filtración de credenciales |
 | Política de privacidad y consentimiento registrado | Cumplimiento de la Ley 18.331 |
+| Admins solo por invitación: enlace único, cifrado (hash), 48 h, un uso, atado al correo | Que alguien se haga administrador sin permiso |
+| Auditoría de roles (trigger) · no se puede quitar el propio rol ni el último admin | Cambios de permisos sin rastro o dejar el sistema sin dueño |
+| Redirección después del login solo a páginas del propio sitio | Enlaces que mandan a sitios falsos (open redirect) |
 
-**Mejoras futuras:** registro de auditoría (quién cambió cada reserva) y verificación en dos pasos para el administrador.
+**Mejoras futuras:** auditoría de cambios en reservas y verificación en dos pasos (MFA) para los administradores.
