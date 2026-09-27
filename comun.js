@@ -116,10 +116,63 @@ function formatearHora(hora) {
 
 const NOMBRES_ESTADO = {
   confirmada: "Confirmada",
+  sentada: "Sentada",
   cancelada: "Cancelada",
   completada: "Completada",
   no_asistio: "No asistió",
 };
+
+// ---------- Tiempos de mesa (reglas del restaurante) ----------
+let reglasTiempo = null;
+
+async function cargarReglasTiempo() {
+  const [ajustes, duraciones] = await Promise.all([
+    db.from("ajustes_reserva").select("*").eq("id", 1).single(),
+    db.from("duracion_por_grupo").select("*").order("hasta_personas"),
+  ]);
+  reglasTiempo = {
+    ajustes: ajustes.data || { apertura: "19:00:00", cierre: "00:00:00", intervalo_min: 15, limpieza_min: 15 },
+    duraciones: duraciones.data || [],
+  };
+  return reglasTiempo;
+}
+
+function aMinutos(hora) {
+  const [h, m] = hora.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function minutosAHora(min) {
+  const m = ((min % 1440) + 1440) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+}
+
+function sumarMinutos(hora, minutos) {
+  return minutosAHora(aMinutos(hora) + minutos);
+}
+
+function duracionPara(personas) {
+  const lista = reglasTiempo ? reglasTiempo.duraciones : [];
+  const regla = lista.find((d) => d.hasta_personas >= personas) || lista[lista.length - 1];
+  return regla ? regla.minutos : 120;
+}
+
+function textoDuracion(min) {
+  if (min < 60) return `${min} min`;
+  return min % 60 === 0 ? `${min / 60} h` : `${Math.floor(min / 60)} h ${min % 60} min`;
+}
+
+// Horarios en los que un grupo puede empezar (la cena termina antes del cierre)
+function horariosPara(personas) {
+  const a = reglasTiempo.ajustes;
+  const apertura = aMinutos(a.apertura);
+  let cierre = aMinutos(a.cierre);
+  if (cierre <= apertura) cierre += 1440;
+  const ultimo = cierre - duracionPara(personas);
+  const lista = [];
+  for (let m = apertura; m <= ultimo; m += a.intervalo_min) lista.push(minutosAHora(m));
+  return lista;
+}
 
 // Fecha de hoy en formato AAAA-MM-DD (hora de Uruguay del navegador)
 function hoyISO() {

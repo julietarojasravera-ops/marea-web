@@ -483,3 +483,16 @@ a { color: var(--azul-ola); }
   text-underline-offset: 3px;
 }
 .enlace-olvide:hover { color: var(--azul-marea); }
+
+/* Tiempo de mesa */
+.info-tiempo {
+  margin: 1rem 0 0;
+  color: var(--azul-ola);
+  font-size: 0.92rem;
+}
+
+/* Acciones del salón y tiempos */
+.acciones-reserva { display: flex; gap: 0.4rem; justify-content: flex-end; flex-wrap: wrap; }
+.acciones-reserva .btn-borde { white-space: nowrap; }
+.subtitulo-tiempos { font-family: var(--fuente-texto); font-size: 1rem; font-weight: 600; color: var(--azul-marea); margin-bottom: 0.4rem; }
+.estado-sentada { background: #fff4d9; color: #7a5a12; }

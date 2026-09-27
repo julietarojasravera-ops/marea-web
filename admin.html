@@ -93,6 +93,7 @@
               <select class="form-select" id="filtro-estado">
                 <option value="">Todos</option>
                 <option value="confirmada">Confirmada</option>
+                <option value="sentada">Sentada</option>
                 <option value="cancelada">Cancelada</option>
                 <option value="completada">Completada</option>
                 <option value="no_asistio">No asistió</option>
@@ -142,7 +143,7 @@
               <tr>
                 <th>Cliente</th>
                 <th>Día</th>
-                <th>Hora</th>
+                <th>Horario</th>
                 <th>Pers.</th>
                 <th>Mesa</th>
                 <th>Estado</th>
@@ -184,6 +185,53 @@
             <tbody id="tabla-mesas"></tbody>
           </table>
         </div>
+
+        <form id="form-tiempos" class="tarjeta mt-4">
+          <h2 class="grupo-titulo mt-0">Tiempos de mesa</h2>
+          <p class="pagina-bajada">
+            Como en los sistemas de reservas profesionales: cada grupo ocupa la mesa un tiempo distinto,
+            se deja un margen para limpiar y se limita cuántas personas empiezan a la vez para no saturar la cocina.
+          </p>
+
+          <div class="row g-3 mb-4">
+            <div class="col-6 col-md-2">
+              <label class="form-label" for="t-apertura">Abre</label>
+              <input class="form-control" type="time" id="t-apertura" required>
+            </div>
+            <div class="col-6 col-md-2">
+              <label class="form-label" for="t-cierre">Cierra</label>
+              <input class="form-control" type="time" id="t-cierre" required>
+            </div>
+            <div class="col-6 col-md-2">
+              <label class="form-label" for="t-intervalo">Turnos cada</label>
+              <select class="form-select" id="t-intervalo">
+                <option value="10">10 min</option>
+                <option value="15">15 min</option>
+                <option value="20">20 min</option>
+                <option value="30">30 min</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label" for="t-limpieza">Limpieza entre reservas (min)</label>
+              <input class="form-control" type="number" id="t-limpieza" min="0" max="60" step="5" required>
+            </div>
+            <div class="col-12 col-md-3">
+              <label class="form-label" for="t-pacing">Máx. personas por turno</label>
+              <input class="form-control" type="number" id="t-pacing" min="1" max="100" required>
+            </div>
+          </div>
+
+          <h3 class="subtitulo-tiempos">Tiempo de mesa según el grupo</h3>
+          <table class="table tabla-marea align-middle mb-2">
+            <tbody id="tabla-duraciones"></tbody>
+          </table>
+          <p class="ayuda-campo mb-3">El último grupo con "hasta 99" cubre a los grupos más grandes.</p>
+          <button type="button" class="btn-borde" id="btn-agregar-duracion">+ Agregar grupo</button>
+
+          <div class="mt-4">
+            <button type="submit" class="btn-marea oscuro">Guardar tiempos</button>
+          </div>
+        </form>
       </section>
 
       <!-- ================= CLIENTES ================= -->

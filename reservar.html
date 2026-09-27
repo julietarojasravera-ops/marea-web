@@ -23,7 +23,7 @@
     <div class="container">
       <div class="tarjeta tarjeta-media">
         <h1 class="pagina-titulo mb-1">Reservá tu mesa</h1>
-        <p class="pagina-bajada mb-4"><span id="saludo"></span> Elegí día, hora y cuántos son. Cada reserva es por 2 horas.</p>
+        <p class="pagina-bajada mb-4"><span id="saludo"></span> Elegí día, cuántos son y la hora.</p>
 
         <form id="form-buscar">
           <div class="row g-3">
@@ -31,16 +31,17 @@
               <label class="form-label" for="fecha">Día</label>
               <input class="form-control" type="date" id="fecha" required>
             </div>
-            <div class="col-6 col-md-3">
-              <label class="form-label" for="hora">Hora</label>
-              <select class="form-select" id="hora" required></select>
-            </div>
             <div class="col-6 col-md-4">
               <label class="form-label" for="personas">Personas</label>
               <select class="form-select" id="personas" required></select>
             </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label" for="hora">Hora</label>
+              <select class="form-select" id="hora" required></select>
+            </div>
           </div>
-          <button type="submit" class="btn-marea oscuro mt-4">Ver disponibilidad</button>
+          <p class="info-tiempo" id="info-tiempo"></p>
+          <button type="submit" class="btn-marea oscuro mt-3">Ver disponibilidad</button>
 
           <div id="resultado" class="resultado oculto">
             <h3>¡Hay mesa!</h3>

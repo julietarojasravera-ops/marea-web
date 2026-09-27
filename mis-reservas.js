@@ -17,7 +17,7 @@ function tarjetaReserva(r, proxima) {
   return `
     <div class="reserva-item ${proxima ? "" : "pasada"}">
       <div>
-        <div class="reserva-fecha">${formatearFecha(r.fecha)} · ${formatearHora(r.hora)}</div>
+        <div class="reserva-fecha">${formatearFecha(r.fecha)} · ${formatearHora(r.hora)} a ${sumarMinutos(formatearHora(r.hora), r.duracion_min)}</div>
         <div class="reserva-detalle">${personas} · Reserva n.º ${r.id_reserva}</div>
       </div>
       <div class="reserva-acciones">
@@ -39,7 +39,7 @@ function pintarGrupo(idCaja, lista, proxima, textoVacio) {
 async function cargarReservas() {
   const { data, error } = await db
     .from("reserva")
-    .select("id_reserva, fecha, hora, cantidad_personas, estado")
+    .select("id_reserva, fecha, hora, cantidad_personas, estado, duracion_min")
     .eq("id_usuario", idUsuario)
     .order("fecha", { ascending: true })
     .order("hora", { ascending: true });

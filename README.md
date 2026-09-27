@@ -19,7 +19,7 @@ Proyecto académico — Incorporación Estratégica · Universidad ORT Uruguay.
 **Cliente**
 - Se registra e inicia sesión, y puede recuperar su contraseña por correo.
 - Consulta disponibilidad por fecha, horario y cantidad de personas.
-- Reserva: el sistema asigna automáticamente la mesa más chica que sirva.
+- Reserva: el sistema asigna automáticamente la mesa más chica que sirva y le dice hasta qué hora es la mesa.
 - Ve sus reservas (próximas y pasadas) y puede cancelarlas.
 - Recibe correos automáticos: confirmación, cambios y cancelaciones.
 
@@ -28,11 +28,26 @@ Proyecto académico — Incorporación Estratégica · Universidad ORT Uruguay.
 - **Alerta de ocupación:** aviso en el panel y por correo cuando un horario llega al 80 %.
 - **Reservas:** consultar, filtrar, crear, modificar y cancelar (el cliente recibe aviso por correo).
 - **Mesas:** agregar, cambiar capacidad, activar y desactivar.
+- **Salón en vivo:** marcar *Sentada* cuando llegan, *Liberar mesa* cuando se van y *+15 min* si se quedan más.
+- **Tiempos de mesa:** horario, turnos, limpieza, ritmo de cocina y duración por tamaño de grupo, editables.
 - **Clientes:** listado con reservas, asistencias, cancelaciones, última visita y próxima reserva.
+
+## Tiempos de mesa (como los sistemas profesionales)
+
+Inspirado en cómo trabajan OpenTable, Resy o SevenRooms:
+
+| Regla | Valor inicial |
+|---|---|
+| Tiempo de mesa según el grupo ("turn time") | 1–2 personas 1 h 30 · 3–4 personas 2 h · 5–6 personas 2 h 30 · 7+ 3 h |
+| Limpieza entre reservas (buffer) | 15 min |
+| Turnos | cada 15 min, de 19:00 a 00:00 |
+| Última reserva | la cena debe terminar antes del cierre (pareja 22:30, grupo de 6 21:30) |
+| Ritmo de cocina ("cover pacing") | máximo 12 personas empezando en el mismo turno |
+| Salón en vivo | liberar la mesa si se van antes, extender si se quedan; los "no asistió" liberan la mesa |
 
 ## Reglas garantizadas por la base de datos
 
-- Una mesa no puede tener dos reservas activas que se superpongan (cada reserva ocupa la mesa 2 horas).
+- Una mesa no puede tener dos reservas activas que se superpongan (tiempo de mesa del grupo + limpieza).
 - La cantidad de personas no puede superar la capacidad de la mesa, y la mesa debe estar activa.
 - Cada cliente solo puede ver sus propias reservas (Row Level Security).
 - Solo el administrador accede al panel y al dashboard.
@@ -87,6 +102,7 @@ Navegador ──► Vercel (sitio) ──► Supabase (Auth + API + PostgreSQL)
 | `sql-2-correos-y-alerta.sql` | Trigger que detecta reservas nuevas, cambios y cancelaciones, y la alerta del 80 % |
 | `sql-3-correos-armados.sql` | Arma el asunto y el diseño de cada correo antes de enviarlo a Make |
 | `sql-4-seguridad.sql` | Límite de reservas por cliente, secreto del webhook y consentimiento de privacidad |
+| `sql-5-tiempos-de-mesa.sql` | Tiempo de mesa por grupo, limpieza, cierre, ritmo de cocina, estado sentada, extender |
 
 Los SQL se corren en ese orden en el SQL Editor de Supabase. La dirección del webhook de Make
 y el correo del administrador se configuran aparte en la tabla `config_app` (no están en el repositorio).
@@ -95,7 +111,8 @@ y el correo del administrador se configuran aparte en la tabla `config_app` (no 
 
 - **usuario** (id_usuario, nombre, email, rol, fecha_nacimiento, fecha_creacion)
 - **mesa** (id_mesa, numero, capacidad, estado)
-- **reserva** (id_reserva, id_usuario → usuario, id_mesa → mesa, fecha, hora, cantidad_personas, estado)
+- **reserva** (id_reserva, id_usuario → usuario, id_mesa → mesa, fecha, hora, cantidad_personas, duracion_min, limpieza_min, estado)
+- **duracion_por_grupo** (hasta_personas, minutos) y **ajustes_reserva** (apertura, cierre, turnos, limpieza, máx. personas por turno)
 
 Relaciones: USUARIO 1 — N RESERVA · MESA 1 — N RESERVA.
 `fecha_nacimiento` queda preparada para la Parte B.

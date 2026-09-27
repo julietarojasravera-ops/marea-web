@@ -1,10 +1,9 @@
 // =========================================================
-// Panel admin: Dashboard, Reservas y Mesas
+// Panel admin: Dashboard, Reservas, Mesas (y tiempos) y Clientes
 // =========================================================
 
-const HORARIOS_ADMIN = ["19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"];
 const UMBRAL_ALERTA = 80; // % de ocupación que dispara la alerta
-const DURACION_MIN = 120; // cada reserva ocupa la mesa 2 horas
+const ESTADOS_EN_MESA = ["confirmada", "sentada", "completada"]; // cuentan para la ocupación
 
 let mesas = [];     // se cargan una vez y se refrescan al editar
 let clientes = [];  // para el formulario de nueva reserva
@@ -17,9 +16,28 @@ function esc(texto) {
   }[c]));
 }
 
-function aMinutos(hora) {
-  const [h, m] = hora.split(":").map(Number);
-  return h * 60 + m;
+// Minutos de apertura y cierre (si cierra a las 00:00, es 24:00)
+function rangoServicio() {
+  const a = reglasTiempo.ajustes;
+  const apertura = aMinutos(a.apertura);
+  let cierre = aMinutos(a.cierre);
+  if (cierre <= apertura) cierre += 1440;
+  return { apertura, cierre, intervalo: a.intervalo_min };
+}
+
+// El admin puede cargar reservas en cualquier turno del servicio
+function horariosAdmin() {
+  const { apertura, cierre, intervalo } = rangoServicio();
+  const lista = [];
+  for (let m = apertura; m < cierre; m += intervalo) lista.push(minutosAHora(m));
+  return lista;
+}
+
+// Minuto de inicio de una reserva dentro del servicio (00:30 = 24:30)
+function inicioEnServicio(hora) {
+  const { apertura } = rangoServicio();
+  const m = aMinutos(hora);
+  return m < apertura ? m + 1440 : m;
 }
 
 function avisoAdmin(tipo, texto) {
@@ -38,7 +56,7 @@ document.querySelectorAll("[data-seccion]").forEach((boton) => {
     ocultarAviso("aviso-admin");
     if (boton.dataset.seccion === "dashboard") cargarDashboard();
     if (boton.dataset.seccion === "reservas") cargarReservas();
-    if (boton.dataset.seccion === "mesas") pintarMesas();
+    if (boton.dataset.seccion === "mesas") { pintarMesas(); pintarTiempos(); }
     if (boton.dataset.seccion === "clientes") cargarClientesTabla();
   });
 });
@@ -69,7 +87,7 @@ dashFecha.addEventListener("change", cargarDashboard);
 async function cargarDashboard() {
   const { data, error } = await db
     .from("reserva")
-    .select("id_reserva, id_mesa, hora, cantidad_personas, estado")
+    .select("id_reserva, id_mesa, hora, cantidad_personas, estado, duracion_min")
     .eq("fecha", dashFecha.value);
   if (error) { avisoAdmin("error", mensajeDeError(error)); return; }
 
@@ -78,19 +96,25 @@ async function cargarDashboard() {
   const personas = activas.reduce((suma, r) => suma + r.cantidad_personas, 0);
   const mesasActivas = mesas.filter((m) => m.estado === "activa").length;
 
-  // Ocupación: en cada media hora, cuántas mesas están tomadas.
+  // Ocupación: en cada turno del servicio, cuántas mesas tienen gente
+  // (cada reserva ocupa la mesa según su propio tiempo de mesa).
   // Nos quedamos con el peor momento de la noche (hora pico).
+  const enMesa = data.filter((r) => ESTADOS_EN_MESA.includes(r.estado));
+  const { apertura, cierre, intervalo } = rangoServicio();
   let pico = 0;
   let horaPico = null;
-  for (let min = aMinutos("19:00"); min <= aMinutos("23:30"); min += 30) {
+  for (let min = apertura; min < cierre; min += intervalo) {
     const ocupadas = new Set(
-      activas
-        .filter((r) => aMinutos(r.hora) <= min && min < aMinutos(r.hora) + DURACION_MIN)
+      enMesa
+        .filter((r) => {
+          const inicio = inicioEnServicio(formatearHora(r.hora));
+          return inicio <= min && min < inicio + r.duracion_min;
+        })
         .map((r) => r.id_mesa)
     ).size;
     if (ocupadas > pico) {
       pico = ocupadas;
-      horaPico = `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+      horaPico = minutosAHora(min);
     }
   }
   const ocupacion = mesasActivas ? Math.round((pico / mesasActivas) * 100) : 0;
@@ -118,12 +142,16 @@ async function cargarDashboard() {
 }
 
 function pintarGrafico(activas) {
-  const conteo = Object.fromEntries(HORARIOS_ADMIN.map((h) => [h, 0]));
+  // Reservas que empiezan en cada media hora
+  const { apertura, cierre } = rangoServicio();
+  const conteo = {};
+  for (let m = apertura; m < cierre - 60; m += 30) conteo[minutosAHora(m)] = 0;
   activas.forEach((r) => {
-    const h = formatearHora(r.hora);
-    conteo[h] = (conteo[h] || 0) + 1;
+    const inicio = inicioEnServicio(formatearHora(r.hora));
+    const bloque = minutosAHora(apertura + Math.floor((inicio - apertura) / 30) * 30);
+    conteo[bloque] = (conteo[bloque] || 0) + 1;
   });
-  const horas = Object.keys(conteo).sort();
+  const horas = Object.keys(conteo).sort((a, b) => inicioEnServicio(a) - inicioEnServicio(b));
   const maximo = Math.max(1, ...Object.values(conteo));
 
   document.getElementById("grafico-horas").innerHTML = horas.map((h) => {
@@ -155,7 +183,7 @@ let reservasCargadas = [];
 async function cargarReservas() {
   let consulta = db
     .from("reserva")
-    .select("id_reserva, id_usuario, id_mesa, fecha, hora, cantidad_personas, estado, usuario(nombre, email), mesa(numero)")
+    .select("id_reserva, id_usuario, id_mesa, fecha, hora, cantidad_personas, estado, duracion_min, usuario(nombre, email), mesa(numero)")
     .order("fecha", { ascending: true })
     .order("hora", { ascending: true });
   if (filtroFecha.value) consulta = consulta.eq("fecha", filtroFecha.value);
@@ -182,7 +210,7 @@ async function cargarReservas() {
         <div class="celda-secundaria">${esc(r.usuario?.email || "")}</div>
       </td>
       <td class="celda-fecha">${formatearFecha(r.fecha)}</td>
-      <td>${formatearHora(r.hora)}</td>
+      <td class="celda-fecha">${formatearHora(r.hora)} a ${sumarMinutos(formatearHora(r.hora), r.duracion_min)}</td>
       <td>${r.cantidad_personas}</td>
       <td>${r.mesa ? r.mesa.numero : "–"}</td>
       <td>
@@ -191,7 +219,12 @@ async function cargarReservas() {
         </select>
       </td>
       <td class="text-end">
-        <button type="button" class="btn-borde" data-editar="${r.id_reserva}">Editar</button>
+        <div class="acciones-reserva">
+          ${r.estado === "confirmada" ? `<button type="button" class="btn-borde" data-accion="sentar" data-id="${r.id_reserva}">Sentar</button>` : ""}
+          ${r.estado === "sentada" ? `<button type="button" class="btn-borde" data-accion="liberar" data-id="${r.id_reserva}">Liberar mesa</button>` : ""}
+          ${["confirmada", "sentada"].includes(r.estado) ? `<button type="button" class="btn-borde" data-accion="extender" data-id="${r.id_reserva}" title="Se quedan más tiempo">+15 min</button>` : ""}
+          <button type="button" class="btn-borde" data-editar="${r.id_reserva}">Editar</button>
+        </div>
       </td>
     </tr>`).join("");
 }
@@ -209,6 +242,29 @@ document.getElementById("tabla-reservas").addEventListener("change", async (e) =
   cargarReservas();
 });
 
+// Acciones rápidas del salón: sentar, liberar mesa, extender
+document.getElementById("tabla-reservas").addEventListener("click", async (e) => {
+  const accion = e.target.closest("[data-accion]");
+  if (!accion) return;
+  const id = Number(accion.dataset.id);
+  accion.disabled = true;
+  let resultado;
+  let texto;
+  if (accion.dataset.accion === "sentar") {
+    resultado = await db.from("reserva").update({ estado: "sentada" }).eq("id_reserva", id);
+    texto = `Reserva n.º ${id}: el grupo ya está en la mesa.`;
+  } else if (accion.dataset.accion === "liberar") {
+    resultado = await db.from("reserva").update({ estado: "completada" }).eq("id_reserva", id);
+    texto = `Reserva n.º ${id}: mesa liberada. Ya se puede volver a reservar.`;
+  } else {
+    resultado = await db.rpc("extender_reserva", { p_id_reserva: id, p_minutos: 15 });
+    texto = `Reserva n.º ${id}: se extendió 15 minutos.`;
+  }
+  if (resultado.error) { avisoAdmin("error", mensajeDeError(resultado.error)); }
+  else { avisoAdmin("ok", texto); }
+  cargarReservas();
+});
+
 // Abrir formulario para editar
 document.getElementById("tabla-reservas").addEventListener("click", (e) => {
   const boton = e.target.closest("[data-editar]");
@@ -223,7 +279,7 @@ const formReserva = document.getElementById("form-reserva");
 
 function llenarSelectores() {
   document.getElementById("r-hora").innerHTML =
-    HORARIOS_ADMIN.map((h) => `<option value="${h}">${h}</option>`).join("");
+    horariosAdmin().map((h) => `<option value="${h}">${h}</option>`).join("");
   document.getElementById("r-mesa").innerHTML =
     `<option value="">Automática (la más chica que sirva)</option>` +
     mesas.filter((m) => m.estado === "activa")
@@ -366,6 +422,99 @@ document.getElementById("form-mesa").addEventListener("submit", async (e) => {
 });
 
 // ---------------------------------------------------------
+// TIEMPOS DE MESA (reglas del restaurante)
+// ---------------------------------------------------------
+function pintarTiempos() {
+  const a = reglasTiempo.ajustes;
+  document.getElementById("t-apertura").value = formatearHora(a.apertura);
+  document.getElementById("t-cierre").value = formatearHora(a.cierre);
+  document.getElementById("t-intervalo").value = String(a.intervalo_min);
+  document.getElementById("t-limpieza").value = a.limpieza_min;
+  document.getElementById("t-pacing").value = a.max_personas_por_turno;
+  pintarDuraciones(reglasTiempo.duraciones);
+}
+
+function pintarDuraciones(lista) {
+  document.getElementById("tabla-duraciones").innerHTML = lista.map((d, i) => `
+    <tr>
+      <td>
+        <div class="d-flex align-items-center gap-2">
+          <span class="texto-suave">hasta</span>
+          <input class="form-control form-control-sm campo-corto" type="number" min="1" max="99"
+                 value="${d.hasta_personas}" data-dur-personas="${i}">
+          <span class="texto-suave">personas</span>
+        </div>
+      </td>
+      <td>
+        <div class="d-flex align-items-center gap-2">
+          <input class="form-control form-control-sm campo-corto" type="number" min="30" max="300" step="15"
+                 value="${d.minutos}" data-dur-minutos="${i}">
+          <span class="texto-suave">min</span>
+        </div>
+      </td>
+      <td class="text-end">
+        <button type="button" class="btn-borde btn-peligro" data-dur-quitar="${i}">Quitar</button>
+      </td>
+    </tr>`).join("");
+}
+
+function leerDuraciones() {
+  return [...document.querySelectorAll("[data-dur-personas]")].map((campo) => ({
+    hasta_personas: Number(campo.value),
+    minutos: Number(document.querySelector(`[data-dur-minutos="${campo.dataset.durPersonas}"]`).value),
+  }));
+}
+
+document.getElementById("btn-agregar-duracion").addEventListener("click", () => {
+  const lista = leerDuraciones();
+  const ultimo = lista.length ? lista[lista.length - 1] : { hasta_personas: 0, minutos: 90 };
+  lista.push({ hasta_personas: ultimo.hasta_personas + 2, minutos: ultimo.minutos + 30 });
+  pintarDuraciones(lista);
+});
+
+document.getElementById("tabla-duraciones").addEventListener("click", (e) => {
+  const boton = e.target.closest("[data-dur-quitar]");
+  if (!boton) return;
+  const lista = leerDuraciones();
+  lista.splice(Number(boton.dataset.durQuitar), 1);
+  pintarDuraciones(lista);
+});
+
+document.getElementById("form-tiempos").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const lista = leerDuraciones().sort((x, y) => x.hasta_personas - y.hasta_personas);
+  const personasRepetidas = new Set(lista.map((d) => d.hasta_personas)).size !== lista.length;
+  if (!lista.length || personasRepetidas || lista.some((d) => !d.hasta_personas || d.minutos < 30 || d.minutos > 300)) {
+    avisoAdmin("error", "Revisá los tiempos por grupo: sin cantidades repetidas y entre 30 y 300 minutos.");
+    return;
+  }
+
+  const ajustes = {
+    apertura: document.getElementById("t-apertura").value,
+    cierre: document.getElementById("t-cierre").value,
+    intervalo_min: Number(document.getElementById("t-intervalo").value),
+    limpieza_min: Number(document.getElementById("t-limpieza").value),
+    max_personas_por_turno: Number(document.getElementById("t-pacing").value),
+  };
+  const r1 = await db.from("ajustes_reserva").update(ajustes).eq("id", 1);
+  if (r1.error) { avisoAdmin("error", mensajeDeError(r1.error)); return; }
+
+  // Reemplaza las reglas por grupo: borra las que se quitaron y guarda el resto
+  const actuales = reglasTiempo.duraciones.map((d) => d.hasta_personas);
+  const quitar = actuales.filter((n) => !lista.some((d) => d.hasta_personas === n));
+  if (quitar.length) {
+    const r2 = await db.from("duracion_por_grupo").delete().in("hasta_personas", quitar);
+    if (r2.error) { avisoAdmin("error", mensajeDeError(r2.error)); return; }
+  }
+  const r3 = await db.from("duracion_por_grupo").upsert(lista, { onConflict: "hasta_personas" });
+  if (r3.error) { avisoAdmin("error", mensajeDeError(r3.error)); return; }
+
+  await cargarReglasTiempo();
+  pintarTiempos();
+  avisoAdmin("ok", "Tiempos guardados. Se aplican a las reservas nuevas.");
+});
+
+// ---------------------------------------------------------
 // CLIENTES
 // ---------------------------------------------------------
 let filasClientes = [];
@@ -434,6 +583,6 @@ document.getElementById("buscar-cliente").addEventListener("input", pintarClient
 
   dashFecha.value = hoyISO();
   filtroFecha.value = hoyISO();
-  await Promise.all([cargarMesas(), cargarClientes()]);
+  await Promise.all([cargarMesas(), cargarClientes(), cargarReglasTiempo()]);
   cargarDashboard();
 })();
