@@ -94,7 +94,7 @@ Navegador ──► Vercel (sitio) ──► Supabase (Auth + API + PostgreSQL)
 
 | Archivo | Qué es |
 |---|---|
-| `index.html` | Portada del restaurante |
+| `index.html` / `portada.js` | Portada del restaurante: la casa, la carta, ambientes, cómo reservar y contacto |
 | `login.html` / `login.js` | Ingreso, registro y pedido de recuperación de contraseña |
 | `nueva-clave.html` / `nueva-clave.js` | Crear contraseña nueva desde el enlace del correo |
 | `reservar.html` / `reservar.js` | Consulta de disponibilidad y reserva |
@@ -107,6 +107,8 @@ Navegador ──► Vercel (sitio) ──► Supabase (Auth + API + PostgreSQL)
 | `plano.js` | Dibuja el plano del local (elegir mesa y editor del admin) |
 | `config.js` | Conexión a Supabase (clave pública) |
 | `estilos.css` | Paleta de colores y estilos |
+| `img-*.jpg` / `plato-*.jpg` | Fotos del local y de los platos (optimizadas para web) |
+| `logo-marea.png` / `logo-marea-claro.png` / `favicon.png` | Logo en dos versiones e ícono del sitio |
 | `privacidad.html` | Política de privacidad (Ley 18.331) |
 | `vercel.json` | Encabezados de seguridad del sitio (CSP, anti-clickjacking) |
 | `sql-1-base-de-datos.sql` | Tablas, reglas, funciones y seguridad (RLS) en Supabase |

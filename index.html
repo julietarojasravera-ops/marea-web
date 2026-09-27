@@ -3,91 +3,392 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Marea · Cocina de mar</title>
-  <meta name="description" content="Marea, restaurante de cocina de mar en la costa atlántica uruguaya. Reservá tu mesa online.">
+  <title>Marea · Cocina de mar frente al Atlántico</title>
+  <meta name="description" content="Marea, restaurante de cocina de mar en la costa atlántica uruguaya. Pesca del día, fuego lento y ventanal al mar. Reservá tu mesa online.">
+  <meta name="theme-color" content="#081c30">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="icono-apple.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="estilos.css" rel="stylesheet">
 </head>
-<body>
+<body class="portada">
 
-  <nav class="nav-marea sobre-hero">
+  <nav class="nav-marea sobre-hero" id="nav">
     <div class="container d-flex justify-content-between align-items-center">
-      <a class="marca" href="index.html">MAREA</a>
+      <a class="marca" href="index.html"><img class="marca-logo" src="logo-marea-claro.png" alt="Marea" width="640" height="203"></a>
+      <div class="nav-anclas">
+        <a href="#la-casa">La casa</a>
+        <a href="#la-carta">La carta</a>
+        <a href="#ambientes">Ambientes</a>
+        <a href="#visitanos">Visitanos</a>
+      </div>
       <div class="nav-enlaces" id="menu"></div>
     </div>
   </nav>
 
-  <header class="hero">
-    <div class="hero-luna" aria-hidden="true"></div>
-    <div class="container">
-      <div class="hero-contenido">
-        <div class="hero-etiqueta">Restaurante · Costa atlántica uruguaya</div>
-        <h1>Cocina de mar, sobremesa larga y viento del Atlántico</h1>
-        <p>Pescados del día, fuego lento y una carta que acompaña la marea. Venís a cenar y te quedás charlando hasta la medianoche.</p>
-        <div class="mt-4">
-          <a class="btn-marea" href="reservar.html">Reservar mesa</a>
-          <span class="hero-horario">Cenas de 19 a 00 h</span>
+  <!-- ================= HERO ================= -->
+  <header class="hero-foto">
+    <div class="container hero-foto-contenido">
+      <p class="ceja ceja-clara">Costa atlántica uruguaya</p>
+      <h1 class="hero-titulo">Cocina de mar,<br><em>frente al Atlántico</em></h1>
+      <p class="hero-bajada">Pesca del día, fuego lento y un ventanal que mira al atardecer. Venís a cenar y te quedás a la sobremesa.</p>
+      <div class="hero-botones">
+        <a class="btn-marea btn-dorado" href="reservar.html">Reservar mesa</a>
+        <a class="btn-fantasma" href="#la-carta">Ver la carta</a>
+      </div>
+    </div>
+    <div class="hero-datos">
+      <div class="container">
+        <div class="row g-0">
+          <div class="col-4 hero-dato"><span class="hero-dato-titulo">Horario</span>Martes a domingo · 19 a 00 h</div>
+          <div class="col-4 hero-dato"><span class="hero-dato-titulo">El lugar</span>20 mesas · 4 ambientes</div>
+          <div class="col-4 hero-dato"><span class="hero-dato-titulo">Reservas</span>Online, en un minuto</div>
         </div>
       </div>
     </div>
-    <svg class="hero-ola" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true">
-      <path d="M0,64 C240,120 480,0 720,48 C960,96 1200,24 1440,64 L1440,120 L0,120 Z"></path>
-    </svg>
   </header>
 
-  <section class="seccion">
+  <!-- ================= LA CASA ================= -->
+  <section class="seccion" id="la-casa">
     <div class="container">
-      <h2 class="seccion-titulo">Lo que nos mueve</h2>
+      <div class="row g-4 g-lg-5 align-items-center">
+        <div class="col-lg-5 revelar">
+          <p class="ceja">Nuestra casa</p>
+          <h2 class="titulo-seccion">Un comedor abierto al mar</h2>
+          <p class="texto-largo">Marea nació de una idea simple: cocinar lo que trae el mar ese día, sin apuro y con fuego. Trabajamos con pescadores de la zona, y por eso la carta cambia según la temporada y la marea.</p>
+          <p class="texto-largo">Madera, lino y luz cálida. Mesas junto al ventanal, un salón para compartir y una barra para esperar el atardecer con una copa en la mano.</p>
+          <div class="cifras">
+            <div><span class="cifra">20</span><span class="cifra-nombre">mesas</span></div>
+            <div><span class="cifra">84</span><span class="cifra-nombre">lugares</span></div>
+            <div><span class="cifra">4</span><span class="cifra-nombre">ambientes</span></div>
+          </div>
+        </div>
+        <div class="col-lg-7 revelar">
+          <div class="collage">
+            <img class="collage-grande" src="img-exterior.jpg" alt="Entrada de Marea al atardecer, con el cartel del restaurante y olivos" width="1600" height="900" loading="lazy">
+            <img class="collage-chica" src="img-ventanal-chica.jpg" alt="Mesas junto al ventanal con vista al mar" width="800" height="450" loading="lazy">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PILARES ================= -->
+  <section class="franja-pilares">
+    <div class="container">
       <div class="row g-4">
-        <div class="col-md-4">
-          <div class="rasgo">
-            <div class="rasgo-numero">01</div>
+        <div class="col-md-4 revelar">
+          <div class="pilar">
+            <span class="pilar-numero">I</span>
             <h3>Pesca del día</h3>
-            <p>Trabajamos con pescadores de la zona. La carta cambia según lo que trae el mar.</p>
+            <p>Lo que entra a la cocina llegó esa mañana al puerto. Si el mar no da, el plato no sale.</p>
           </div>
         </div>
-        <div class="col-md-4">
-          <div class="rasgo">
-            <div class="rasgo-numero">02</div>
+        <div class="col-md-4 revelar">
+          <div class="pilar">
+            <span class="pilar-numero">II</span>
             <h3>Fuego lento</h3>
-            <p>Brasas suaves y tiempos largos, para que cada plato tenga su punto justo.</p>
+            <p>Brasas de leña, hierro caliente y tiempos largos, para que cada pieza llegue a su punto justo.</p>
           </div>
         </div>
-        <div class="col-md-4">
-          <div class="rasgo">
-            <div class="rasgo-numero">03</div>
+        <div class="col-md-4 revelar">
+          <div class="pilar">
+            <span class="pilar-numero">III</span>
             <h3>Sobremesa sin apuro</h3>
-            <p>Cada mesa es tuya por dos horas. Reservá online y llegá tranquilo.</p>
+            <p>Tu mesa es tuya el tiempo que necesita tu grupo. Reservá online y llegá tranquilo.</p>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="pb-5">
+  <!-- ================= LA CARTA ================= -->
+  <section class="seccion seccion-arena" id="la-carta">
     <div class="container">
-      <div class="franja-reserva d-md-flex justify-content-between align-items-center gap-4">
-        <div>
-          <h2>¿Venís esta noche?</h2>
-          <p>Mirá la disponibilidad en segundos y asegurá tu mesa.</p>
+      <div class="text-center encabezado-centrado revelar">
+        <p class="ceja">La carta</p>
+        <h2 class="titulo-seccion">Del mar a la mesa</h2>
+        <p class="texto-largo">Una selección de nuestros platos. La carta completa cambia con la temporada y con lo que traen los pescadores.</p>
+      </div>
+
+      <h3 class="carta-grupo revelar"><span>Para empezar</span></h3>
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-4 revelar">
+          <article class="plato">
+            <div class="plato-foto"><img src="plato-ceviche.jpg" alt="Ceviche de corvina con palta y cebolla morada" width="720" height="720" loading="lazy"></div>
+            <div class="plato-cuerpo">
+              <div class="plato-linea"><h4>Ceviche de corvina</h4><span class="plato-precio">$ 620</span></div>
+              <p>Corvina del día curada en leche de tigre cítrica, palta, cebolla morada y cilantro.</p>
+            </div>
+          </article>
         </div>
-        <a class="btn-marea mt-3 mt-md-0" href="reservar.html">Reservar mesa</a>
+        <div class="col-md-6 col-lg-4 revelar">
+          <article class="plato">
+            <div class="plato-foto"><img src="plato-pulpo.jpg" alt="Pulpo a la brasa con papas y limón asado" width="720" height="720" loading="lazy"></div>
+            <div class="plato-cuerpo">
+              <div class="plato-linea"><h4>Pulpo a la brasa</h4><span class="plato-precio">$ 890</span></div>
+              <p>Tentáculo tierno a las brasas, papas rotas, limón asado y aceite de pimentón ahumado.</p>
+            </div>
+          </article>
+        </div>
+        <div class="col-md-6 col-lg-4 revelar">
+          <article class="plato">
+            <div class="plato-foto"><img src="plato-burrata.jpg" alt="Burrata con duraznos y tomates asados" width="720" height="720" loading="lazy"></div>
+            <div class="plato-cuerpo">
+              <div class="plato-linea"><h4>Burrata y duraznos</h4><span class="plato-precio">$ 580</span></div>
+              <p>Burrata cremosa, duraznos a la parrilla, tomates asados, albahaca y oliva virgen.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <h3 class="carta-grupo revelar"><span>Principales</span></h3>
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-3 revelar">
+          <article class="plato">
+            <div class="plato-foto"><img src="plato-pesca.jpg" alt="Pesca del día con vegetales asados" width="720" height="720" loading="lazy"></div>
+            <div class="plato-cuerpo">
+              <div class="plato-linea"><h4>Pesca del día</h4><span class="plato-precio">$ 980</span></div>
+              <p>Filete a la plancha con piel crocante y vegetales de estación al fuego.</p>
+            </div>
+          </article>
+        </div>
+        <div class="col-md-6 col-lg-3 revelar">
+          <article class="plato">
+            <div class="plato-foto"><img src="plato-risotto.jpg" alt="Risotto de mariscos con mejillones y langostinos" width="720" height="720" loading="lazy"></div>
+            <div class="plato-cuerpo">
+              <div class="plato-linea"><h4>Risotto de mariscos</h4><span class="plato-precio">$ 920</span></div>
+              <p>Arroz carnaroli, fumet de la casa, mejillones, langostinos y un toque de limón.</p>
+            </div>
+          </article>
+        </div>
+        <div class="col-md-6 col-lg-3 revelar">
+          <article class="plato">
+            <div class="plato-foto"><img src="plato-tagliatelle.jpg" alt="Tagliatelle con langostinos y tomates cherry" width="720" height="720" loading="lazy"></div>
+            <div class="plato-cuerpo">
+              <div class="plato-linea"><h4>Tagliatelle con langostinos</h4><span class="plato-precio">$ 860</span></div>
+              <p>Pasta fresca, langostinos salteados, tomates cherry, ajo y perejil.</p>
+            </div>
+          </article>
+        </div>
+        <div class="col-md-6 col-lg-3 revelar">
+          <article class="plato">
+            <div class="plato-foto"><img src="plato-parrillada.jpg" alt="Parrillada de mar con langostinos, calamares, pescado y mejillones" width="720" height="720" loading="lazy"></div>
+            <div class="plato-cuerpo">
+              <div class="plato-linea"><h4>Parrillada de mar</h4><span class="plato-precio">$ 2.450</span></div>
+              <p>Para compartir entre dos: langostinos, calamar, pescado, mejillones y almejas a la leña.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <h3 class="carta-grupo revelar"><span>Postres</span></h3>
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-4 revelar">
+          <article class="plato">
+            <div class="plato-foto"><img src="plato-lemon-pie.jpg" alt="Lemon pie con merengue tostado" width="720" height="720" loading="lazy"></div>
+            <div class="plato-cuerpo">
+              <div class="plato-linea"><h4>Lemon pie Marea</h4><span class="plato-precio">$ 390</span></div>
+              <p>Masa sablée, crema de limón y merengue italiano tostado al momento.</p>
+            </div>
+          </article>
+        </div>
+        <div class="col-md-6 col-lg-4 revelar">
+          <article class="plato">
+            <div class="plato-foto"><img src="plato-cheesecake.jpg" alt="Cheesecake con dulce de leche y crocante" width="720" height="720" loading="lazy"></div>
+            <div class="plato-cuerpo">
+              <div class="plato-linea"><h4>Cheesecake de dulce de leche</h4><span class="plato-precio">$ 390</span></div>
+              <p>Cremoso, con dulce de leche tibio, crocante de almendras y helado de crema.</p>
+            </div>
+          </article>
+        </div>
+        <div class="col-lg-4 revelar">
+          <div class="tarjeta-chef">
+            <p class="ceja ceja-clara">Sugerencia de la cocina</p>
+            <h4>Cada noche hay un plato fuera de carta</h4>
+            <p>Depende de lo que llegó al puerto esa mañana. Preguntale a tu mozo al sentarte.</p>
+            <a class="btn-fantasma" href="reservar.html">Reservar mesa</a>
+          </div>
+        </div>
+      </div>
+      <p class="nota-carta">Precios en pesos uruguayos, IVA incluido. Carta ilustrativa del proyecto.</p>
+    </div>
+  </section>
+
+  <!-- ================= BANNER ATARDECER ================= -->
+  <section class="banner-atardecer">
+    <div class="container text-center revelar">
+      <p class="ceja ceja-clara">Todas las noches</p>
+      <h2 class="banner-titulo">El atardecer se sirve a las 19 h</h2>
+      <p class="banner-texto">Las mesas del ventanal son las primeras en llenarse. Elegí la tuya en el plano al reservar.</p>
+      <a class="btn-marea btn-dorado" href="reservar.html">Elegir mi mesa</a>
+    </div>
+  </section>
+
+  <!-- ================= AMBIENTES ================= -->
+  <section class="seccion" id="ambientes">
+    <div class="container">
+      <div class="d-lg-flex justify-content-between align-items-end mb-4 revelar">
+        <div>
+          <p class="ceja">Ambientes</p>
+          <h2 class="titulo-seccion mb-0">Cuatro formas de vivir Marea</h2>
+        </div>
+        <p class="texto-largo texto-lateral">Al reservar ves el plano del local y elegís en qué mesa sentarte. Te mostramos solo las mesas justas para tu grupo.</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-3 revelar">
+          <article class="ambiente">
+            <img src="img-ventanal-chica.jpg" alt="Mesas para dos junto al ventanal" width="800" height="450" loading="lazy">
+            <div class="ambiente-texto">
+              <span class="ambiente-dato">6 mesas para 2</span>
+              <h3>Ventanal</h3>
+              <p>Primera fila frente al mar. Ideal para una cita o un aniversario.</p>
+            </div>
+          </article>
+        </div>
+        <div class="col-md-6 col-lg-3 revelar">
+          <article class="ambiente">
+            <img src="img-salon-chica.jpg" alt="Salón principal de Marea visto desde arriba" width="800" height="450" loading="lazy">
+            <div class="ambiente-texto">
+              <span class="ambiente-dato">8 mesas para 4</span>
+              <h3>Salón</h3>
+              <p>El corazón de la casa, luminoso y con vista abierta al agua.</p>
+            </div>
+          </article>
+        </div>
+        <div class="col-md-6 col-lg-3 revelar">
+          <article class="ambiente">
+            <img src="img-barra-chica.jpg" alt="Barra de Marea al atardecer" width="800" height="450" loading="lazy">
+            <div class="ambiente-texto">
+              <span class="ambiente-dato">2 mesas para 8</span>
+              <h3>Barra</h3>
+              <p>Mesas largas junto a la barra, para grupos que vienen a celebrar.</p>
+            </div>
+          </article>
+        </div>
+        <div class="col-md-6 col-lg-3 revelar">
+          <article class="ambiente">
+            <img src="img-atardecer-chica.jpg" alt="Comedor lleno al atardecer" width="800" height="450" loading="lazy">
+            <div class="ambiente-texto">
+              <span class="ambiente-dato">4 mesas para 6</span>
+              <h3>Fondo</h3>
+              <p>Más reservado y tranquilo, pensado para familias y amigos.</p>
+            </div>
+          </article>
+        </div>
       </div>
     </div>
   </section>
 
-  <footer class="pie">
-    <div class="container d-flex justify-content-between flex-wrap gap-2">
-      <span>Marea · Costa atlántica uruguaya</span>
-      <span>Cenas de martes a domingo, de 19 a 00 h · <a class="enlace-pie" href="privacidad.html">Política de privacidad</a></span>
+  <!-- ================= CÓMO RESERVAR ================= -->
+  <section class="seccion seccion-noche">
+    <div class="container">
+      <div class="text-center encabezado-centrado revelar">
+        <p class="ceja ceja-clara">Reservas online</p>
+        <h2 class="titulo-seccion titulo-claro">Tu mesa, en tres pasos</h2>
+      </div>
+      <div class="row g-4 pasos">
+        <div class="col-md-4 revelar">
+          <div class="paso">
+            <span class="paso-numero">1</span>
+            <h3>Elegí día y personas</h3>
+            <p>Te mostramos los horarios con lugar y cuánto tiempo es tuya la mesa.</p>
+          </div>
+        </div>
+        <div class="col-md-4 revelar">
+          <div class="paso">
+            <span class="paso-numero">2</span>
+            <h3>Elegí tu mesa</h3>
+            <p>En el plano del local, o dejá que te asignemos la mejor. Si no hay lugar, te sugerimos otro horario.</p>
+          </div>
+        </div>
+        <div class="col-md-4 revelar">
+          <div class="paso">
+            <span class="paso-numero">3</span>
+            <h3>Recibí la confirmación</h3>
+            <p>Te llega un correo al instante. Desde “Mis reservas” podés verla o cancelarla.</p>
+          </div>
+        </div>
+      </div>
+      <div class="text-center mt-5 revelar">
+        <a class="btn-marea btn-dorado" href="reservar.html">Reservar ahora</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= VISITANOS ================= -->
+  <section class="seccion" id="visitanos">
+    <div class="container">
+      <div class="row g-4 g-lg-5 align-items-stretch">
+        <div class="col-lg-6 revelar">
+          <img class="foto-visita" src="img-barra.jpg" alt="Barra de Marea con el mar de fondo" width="1600" height="900" loading="lazy">
+        </div>
+        <div class="col-lg-6 revelar">
+          <p class="ceja">Visitanos</p>
+          <h2 class="titulo-seccion">Te esperamos</h2>
+          <div class="row g-4 datos-visita">
+            <div class="col-sm-6">
+              <h3>Horario</h3>
+              <p>Martes a domingo<br>Cenas de 19:00 a 00:00<br>Lunes cerrado</p>
+            </div>
+            <div class="col-sm-6">
+              <h3>Dónde</h3>
+              <p>Sobre la rambla<br>Costa atlántica uruguaya</p>
+            </div>
+            <div class="col-sm-6">
+              <h3>Contacto</h3>
+              <p><a href="mailto:mareareservasuy@gmail.com">mareareservasuy@gmail.com</a></p>
+            </div>
+            <div class="col-sm-6">
+              <h3>Para tener en cuenta</h3>
+              <p>Te guardamos la mesa 15 minutos. Grupos de más de 8 personas, escribinos.</p>
+            </div>
+          </div>
+          <a class="btn-marea oscuro mt-4" href="reservar.html">Reservar mesa</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PIE ================= -->
+  <footer class="pie-marea">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-lg-4">
+          <img class="pie-logo" src="logo-marea-claro.png" alt="Marea" width="640" height="203" loading="lazy">
+          <p class="pie-lema">Cocina de mar, sobremesa larga y viento del Atlántico.</p>
+        </div>
+        <div class="col-6 col-lg-2 offset-lg-1">
+          <h3 class="pie-titulo">Marea</h3>
+          <a class="pie-enlace" href="#la-casa">La casa</a>
+          <a class="pie-enlace" href="#la-carta">La carta</a>
+          <a class="pie-enlace" href="#ambientes">Ambientes</a>
+        </div>
+        <div class="col-6 col-lg-2">
+          <h3 class="pie-titulo">Reservas</h3>
+          <a class="pie-enlace" href="reservar.html">Reservar mesa</a>
+          <a class="pie-enlace" href="mis-reservas.html">Mis reservas</a>
+          <a class="pie-enlace" href="login.html">Ingresar</a>
+        </div>
+        <div class="col-lg-3">
+          <h3 class="pie-titulo">Horario</h3>
+          <p class="pie-texto">Martes a domingo, de 19 a 00 h</p>
+          <a class="pie-enlace" href="mailto:mareareservasuy@gmail.com">mareareservasuy@gmail.com</a>
+        </div>
+      </div>
+      <div class="pie-final">
+        <span>© Marea · Proyecto académico · Universidad ORT Uruguay</span>
+        <a class="pie-enlace" href="privacidad.html">Política de privacidad</a>
+      </div>
     </div>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="comun.js"></script>
+  <script src="portada.js"></script>
 </body>
 </html>
