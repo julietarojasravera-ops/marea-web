@@ -65,6 +65,12 @@
             <input class="form-control" type="text" id="registro-nombre" required autocomplete="name">
           </div>
           <div class="mb-3">
+            <label class="form-label" for="registro-telefono">Teléfono</label>
+            <input class="form-control" type="tel" id="registro-telefono" required autocomplete="tel"
+                   pattern="[0-9 +\(\)\-]{6,20}" placeholder="099 123 456">
+            <div class="ayuda-campo">Lo usamos solo para avisarte de tu reserva.</div>
+          </div>
+          <div class="mb-3">
             <label class="form-label" for="registro-email">Correo</label>
             <input class="form-control" type="email" id="registro-email" required autocomplete="email">
           </div>

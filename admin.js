@@ -33,11 +33,13 @@ function horariosAdmin() {
   return lista;
 }
 
-// Minuto de inicio de una reserva dentro del servicio (00:30 = 24:30)
+// Minuto dentro del servicio: si cierra después de medianoche, 00:30 = 24:30.
+// Las horas de la mañana (antes de abrir) quedan como "antes del servicio".
 function inicioEnServicio(hora) {
-  const { apertura } = rangoServicio();
+  const { apertura, cierre } = rangoServicio();
   const m = aMinutos(hora);
-  return m < apertura ? m + 1440 : m;
+  if (m >= apertura) return m;
+  return m < cierre - 1440 ? m + 1440 : m;
 }
 
 function avisoAdmin(tipo, texto) {
@@ -73,7 +75,7 @@ async function cargarMesas() {
 async function cargarClientes() {
   const { data, error } = await db
     .from("usuario")
-    .select("id_usuario, nombre, email, rol, fecha_creacion")
+    .select("id_usuario, nombre, email, telefono, rol, fecha_creacion")
     .order("nombre");
   if (!error) clientes = data;
 }
@@ -82,23 +84,44 @@ async function cargarClientes() {
 // DASHBOARD
 // ---------------------------------------------------------
 const dashFecha = document.getElementById("dash-fecha");
+let reservasDia = [];   // reservas del día elegido (las usa también admin-salon.js)
+
+function moverDia(dias) {
+  const [a, m, d] = dashFecha.value.split("-").map(Number);
+  const f = new Date(a, m - 1, d + dias);
+  dashFecha.value = `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, "0")}-${String(f.getDate()).padStart(2, "0")}`;
+  cargarDashboard();
+}
 dashFecha.addEventListener("change", cargarDashboard);
+document.getElementById("dia-anterior").addEventListener("click", () => moverDia(-1));
+document.getElementById("dia-siguiente").addEventListener("click", () => moverDia(1));
+document.getElementById("dia-hoy").addEventListener("click", () => { dashFecha.value = hoyISO(); cargarDashboard(); });
+document.getElementById("btn-actualizar").addEventListener("click", () => { cargarDashboard(); cargarSemana(); });
 
 async function cargarDashboard() {
   const { data, error } = await db
     .from("reserva")
-    .select("id_reserva, id_mesa, hora, cantidad_personas, estado, duracion_min")
-    .eq("fecha", dashFecha.value);
+    .select("id_reserva, id_usuario, id_mesa, fecha, hora, cantidad_personas, estado, duracion_min, limpieza_min, ocasion, comentarios, usuario(nombre, email, telefono), mesa(numero, zona)")
+    .eq("fecha", dashFecha.value)
+    .order("hora");
   if (error) { avisoAdmin("error", mensajeDeError(error)); return; }
+  reservasDia = data;
+
+  const texto = formatearFecha(dashFecha.value);
+  document.getElementById("dash-dia-texto").textContent =
+    dashFecha.value === hoyISO() ? `Hoy · ${texto}` : texto;
 
   const activas = data.filter((r) => r.estado !== "cancelada");
+  const vinieron = activas.filter((r) => r.estado !== "no_asistio");
   const canceladas = data.length - activas.length;
-  const personas = activas.reduce((suma, r) => suma + r.cantidad_personas, 0);
+  const noVinieron = activas.length - vinieron.length;
+  const personas = vinieron.reduce((suma, r) => suma + r.cantidad_personas, 0);
   const mesasActivas = mesas.filter((m) => m.estado === "activa").length;
+  const lugares = mesas.filter((m) => m.estado === "activa").reduce((s2, m) => s2 + m.capacidad, 0);
+  const sentadas = data.filter((r) => r.estado === "sentada");
 
   // Ocupación: en cada turno del servicio, cuántas mesas tienen gente
   // (cada reserva ocupa la mesa según su propio tiempo de mesa).
-  // Nos quedamos con el peor momento de la noche (hora pico).
   const enMesa = data.filter((r) => ESTADOS_EN_MESA.includes(r.estado));
   const { apertura, cierre, intervalo } = rangoServicio();
   let pico = 0;
@@ -121,7 +144,15 @@ async function cargarDashboard() {
 
   document.getElementById("kpi-reservas").textContent = activas.length;
   document.getElementById("kpi-personas").textContent = personas;
+  document.getElementById("kpi-personas-nota").textContent =
+    `de ${lugares} lugares · ${vinieron.length ? (personas / vinieron.length).toFixed(1) : 0} por mesa`;
   document.getElementById("kpi-canceladas").textContent = canceladas;
+  document.getElementById("kpi-noshow").textContent = noVinieron;
+  document.getElementById("kpi-noshow-nota").textContent =
+    activas.length ? `${Math.round((noVinieron / activas.length) * 100)}% de las reservas` : "";
+  document.getElementById("kpi-sentadas").textContent = sentadas.length;
+  document.getElementById("kpi-sentadas-nota").textContent =
+    `mesas · ${sentadas.reduce((s2, r) => s2 + r.cantidad_personas, 0)} personas`;
   document.getElementById("kpi-ocupacion").textContent = `${ocupacion}%`;
   document.getElementById("kpi-ocupacion-nota").textContent = horaPico
     ? `${pico} de ${mesasActivas} mesas a las ${horaPico}`
@@ -139,6 +170,50 @@ async function cargarDashboard() {
   }
 
   pintarGrafico(activas);
+  pintarPanelSalon();   // admin-salon.js: salón en vivo, línea de tiempo y próximas llegadas
+}
+
+// ---------- Últimos 7 días ----------
+async function cargarSemana() {
+  const hoy = hoyISO();
+  const [a, m, d] = hoy.split("-").map(Number);
+  const inicio = new Date(a, m - 1, d - 6);
+  const desde = `${inicio.getFullYear()}-${String(inicio.getMonth() + 1).padStart(2, "0")}-${String(inicio.getDate()).padStart(2, "0")}`;
+  const { data, error } = await db
+    .from("reserva")
+    .select("fecha, cantidad_personas, estado")
+    .gte("fecha", desde)
+    .lte("fecha", hoy);
+  if (error) return;
+
+  const dias = [];
+  for (let i = 0; i < 7; i++) {
+    const f = new Date(a, m - 1, d - 6 + i);
+    dias.push(`${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, "0")}-${String(f.getDate()).padStart(2, "0")}`);
+  }
+  const total = { reservas: 0, cubiertos: 0, canceladas: 0, noshow: 0 };
+  const filas = dias.map((dia) => {
+    const del = data.filter((r) => r.fecha === dia);
+    const fila = {
+      reservas: del.filter((r) => r.estado !== "cancelada").length,
+      cubiertos: del.filter((r) => !["cancelada", "no_asistio"].includes(r.estado))
+        .reduce((s2, r) => s2 + r.cantidad_personas, 0),
+      canceladas: del.filter((r) => r.estado === "cancelada").length,
+      noshow: del.filter((r) => r.estado === "no_asistio").length,
+    };
+    Object.keys(total).forEach((k) => { total[k] += fila[k]; });
+    const nombre = new Date(dia + "T12:00").toLocaleDateString("es-UY", { weekday: "short", day: "numeric" });
+    return `<tr class="${dia === hoy ? "fila-hoy" : ""}"><td class="celda-fecha">${nombre}</td>
+      <td>${fila.reservas}</td><td>${fila.cubiertos}</td><td>${fila.canceladas}</td><td>${fila.noshow}</td></tr>`;
+  });
+  document.getElementById("tabla-semana").innerHTML = filas.join("");
+  const pedidas = total.reservas + total.canceladas;
+  const tasaCancel = pedidas ? Math.round((total.canceladas / pedidas) * 100) : 0;
+  const tasaNoShow = total.reservas ? Math.round((total.noshow / total.reservas) * 100) : 0;
+  document.getElementById("pie-semana").innerHTML = `
+    <tr class="fila-total"><td>Total</td><td>${total.reservas}</td><td>${total.cubiertos}</td>
+      <td>${total.canceladas} <span class="texto-suave">(${tasaCancel}%)</span></td>
+      <td>${total.noshow} <span class="texto-suave">(${tasaNoShow}%)</span></td></tr>`;
 }
 
 function pintarGrafico(activas) {
@@ -177,13 +252,35 @@ document.getElementById("btn-ver-todas").addEventListener("click", () => {
   filtroFecha.value = "";
   cargarReservas();
 });
+document.getElementById("buscar-reserva").addEventListener("input", () => pintarReservas());
+
+// Exportar a CSV (se abre en Excel o Google Sheets)
+document.getElementById("btn-exportar").addEventListener("click", () => {
+  const filas = reservasFiltradas();
+  if (!filas.length) { avisoAdmin("info", "No hay reservas para exportar con esos filtros."); return; }
+  const columnas = ["Reserva", "Fecha", "Desde", "Hasta", "Personas", "Mesa", "Zona", "Cliente", "Correo",
+    "Teléfono", "Estado", "Ocasión", "Comentarios"];
+  const celda = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const lineas = filas.map((r) => [
+    r.id_reserva, r.fecha, formatearHora(r.hora), sumarMinutos(formatearHora(r.hora), r.duracion_min),
+    r.cantidad_personas, r.mesa?.numero, r.mesa?.zona, r.usuario?.nombre, r.usuario?.email,
+    r.usuario?.telefono, NOMBRES_ESTADO[r.estado] || r.estado, r.ocasion, r.comentarios,
+  ].map(celda).join(";"));
+  const csv = "\uFEFF" + [columnas.map(celda).join(";"), ...lineas].join("\r\n");
+  const enlace = document.createElement("a");
+  enlace.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  enlace.download = `reservas-marea-${filtroFecha.value || "todas"}.csv`;
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
+});
 
 let reservasCargadas = [];
 
 async function cargarReservas() {
   let consulta = db
     .from("reserva")
-    .select("id_reserva, id_usuario, id_mesa, fecha, hora, cantidad_personas, estado, duracion_min, usuario(nombre, email), mesa(numero)")
+    .select("id_reserva, id_usuario, id_mesa, fecha, hora, cantidad_personas, estado, duracion_min, ocasion, comentarios, usuario(nombre, email, telefono), mesa(numero, zona)")
     .order("fecha", { ascending: true })
     .order("hora", { ascending: true });
   if (filtroFecha.value) consulta = consulta.eq("fecha", filtroFecha.value);
@@ -192,10 +289,23 @@ async function cargarReservas() {
   const { data, error } = await consulta;
   if (error) { avisoAdmin("error", mensajeDeError(error)); return; }
   reservasCargadas = data;
+  pintarReservas();
+}
 
+// Filtro de texto (nombre, correo o teléfono) sobre lo que ya se cargó
+function reservasFiltradas() {
+  const texto = document.getElementById("buscar-reserva").value.trim().toLowerCase();
+  if (!texto) return reservasCargadas;
+  return reservasCargadas.filter((r) =>
+    [r.usuario?.nombre, r.usuario?.email, r.usuario?.telefono]
+      .some((v) => (v || "").toLowerCase().includes(texto)));
+}
+
+function pintarReservas() {
+  const data = reservasFiltradas();
   const cuerpo = document.getElementById("tabla-reservas");
   if (!data.length) {
-    cuerpo.innerHTML = `<tr><td colspan="7" class="text-center py-4 texto-suave">No hay reservas con esos filtros.</td></tr>`;
+    cuerpo.innerHTML = `<tr><td colspan="8" class="text-center py-4 texto-suave">No hay reservas con esos filtros.</td></tr>`;
     return;
   }
 
@@ -207,12 +317,17 @@ async function cargarReservas() {
     <tr>
       <td>
         <div class="celda-principal">${esc(r.usuario?.nombre || "Sin nombre")}</div>
-        <div class="celda-secundaria">${esc(r.usuario?.email || "")}</div>
+        <div class="celda-secundaria">${esc(r.usuario?.email || "")}${r.usuario?.telefono ? ` · ${esc(r.usuario.telefono)}` : ""}</div>
       </td>
       <td class="celda-fecha">${formatearFecha(r.fecha)}</td>
       <td class="celda-fecha">${formatearHora(r.hora)} a ${sumarMinutos(formatearHora(r.hora), r.duracion_min)}</td>
       <td>${r.cantidad_personas}</td>
       <td>${r.mesa ? r.mesa.numero : "–"}</td>
+      <td class="celda-notas">
+        ${r.ocasion ? `<div class="nota-ocasion">${NOMBRES_OCASION[r.ocasion] || esc(r.ocasion)}</div>` : ""}
+        ${r.comentarios ? `<div class="celda-secundaria">${esc(r.comentarios)}</div>` : ""}
+        ${!r.ocasion && !r.comentarios ? `<span class="texto-suave">–</span>` : ""}
+      </td>
       <td>
         <select class="form-select form-select-sm selector-estado estado-${r.estado}" data-estado="${r.id_reserva}">
           ${opcionesEstado(r.estado)}
@@ -220,9 +335,7 @@ async function cargarReservas() {
       </td>
       <td class="text-end">
         <div class="acciones-reserva">
-          ${r.estado === "confirmada" ? `<button type="button" class="btn-borde" data-accion="sentar" data-id="${r.id_reserva}">Sentar</button>` : ""}
-          ${r.estado === "sentada" ? `<button type="button" class="btn-borde" data-accion="liberar" data-id="${r.id_reserva}">Liberar mesa</button>` : ""}
-          ${["confirmada", "sentada"].includes(r.estado) ? `<button type="button" class="btn-borde" data-accion="extender" data-id="${r.id_reserva}" title="Se quedan más tiempo">+15 min</button>` : ""}
+          ${botonesAccion(r)}
           <button type="button" class="btn-borde" data-editar="${r.id_reserva}">Editar</button>
         </div>
       </td>
@@ -242,26 +355,41 @@ document.getElementById("tabla-reservas").addEventListener("change", async (e) =
   cargarReservas();
 });
 
-// Acciones rápidas del salón: sentar, liberar mesa, extender
-document.getElementById("tabla-reservas").addEventListener("click", async (e) => {
-  const accion = e.target.closest("[data-accion]");
-  if (!accion) return;
-  const id = Number(accion.dataset.id);
-  accion.disabled = true;
+// Acciones rápidas del salón (las usan la tabla y el salón en vivo)
+async function accionReserva(id, accion) {
   let resultado;
   let texto;
-  if (accion.dataset.accion === "sentar") {
+  if (accion === "sentar") {
     resultado = await db.from("reserva").update({ estado: "sentada" }).eq("id_reserva", id);
     texto = `Reserva n.º ${id}: el grupo ya está en la mesa.`;
-  } else if (accion.dataset.accion === "liberar") {
+  } else if (accion === "liberar") {
     resultado = await db.from("reserva").update({ estado: "completada" }).eq("id_reserva", id);
     texto = `Reserva n.º ${id}: mesa liberada. Ya se puede volver a reservar.`;
+  } else if (accion === "noshow") {
+    resultado = await db.from("reserva").update({ estado: "no_asistio" }).eq("id_reserva", id);
+    texto = `Reserva n.º ${id}: marcada como "no vino". La mesa quedó libre.`;
   } else {
     resultado = await db.rpc("extender_reserva", { p_id_reserva: id, p_minutos: 15 });
     texto = `Reserva n.º ${id}: se extendió 15 minutos.`;
   }
-  if (resultado.error) { avisoAdmin("error", mensajeDeError(resultado.error)); }
-  else { avisoAdmin("ok", texto); }
+  if (resultado.error) { avisoAdmin("error", mensajeDeError(resultado.error)); return false; }
+  avisoAdmin("ok", texto);
+  return true;
+}
+
+function botonesAccion(r) {
+  return `
+    ${r.estado === "confirmada" ? `<button type="button" class="btn-borde" data-accion="sentar" data-id="${r.id_reserva}">Sentar</button>` : ""}
+    ${r.estado === "sentada" ? `<button type="button" class="btn-borde" data-accion="liberar" data-id="${r.id_reserva}">Liberar mesa</button>` : ""}
+    ${["confirmada", "sentada"].includes(r.estado) ? `<button type="button" class="btn-borde" data-accion="extender" data-id="${r.id_reserva}" title="Se quedan más tiempo">+15 min</button>` : ""}
+    ${r.estado === "confirmada" ? `<button type="button" class="btn-borde btn-peligro" data-accion="noshow" data-id="${r.id_reserva}" title="No se presentaron">No vino</button>` : ""}`;
+}
+
+document.getElementById("tabla-reservas").addEventListener("click", async (e) => {
+  const boton = e.target.closest("[data-accion]");
+  if (!boton) return;
+  boton.disabled = true;
+  await accionReserva(Number(boton.dataset.id), boton.dataset.accion);
   cargarReservas();
 });
 
@@ -281,9 +409,9 @@ function llenarSelectores() {
   document.getElementById("r-hora").innerHTML =
     horariosAdmin().map((h) => `<option value="${h}">${h}</option>`).join("");
   document.getElementById("r-mesa").innerHTML =
-    `<option value="">Automática (la más chica que sirva)</option>` +
+    `<option value="">Automática (la mesa justa para el grupo)</option>` +
     mesas.filter((m) => m.estado === "activa")
-      .map((m) => `<option value="${m.id_mesa}">Mesa ${m.numero} · hasta ${m.capacidad} personas</option>`)
+      .map((m) => `<option value="${m.id_mesa}">Mesa ${m.numero} · para ${m.capacidad}${m.zona ? ` · ${m.zona}` : ""}</option>`)
       .join("");
   document.getElementById("r-cliente").innerHTML =
     `<option value="">Elegí un cliente…</option>` +
@@ -302,6 +430,8 @@ function abrirPanel(reserva = null) {
   document.getElementById("r-hora").value = reserva ? formatearHora(reserva.hora) : "20:00";
   document.getElementById("r-personas").value = reserva ? reserva.cantidad_personas : 2;
   document.getElementById("r-mesa").value = reserva ? reserva.id_mesa : "";
+  document.getElementById("r-ocasion").value = reserva?.ocasion || "";
+  document.getElementById("r-comentarios").value = reserva?.comentarios || "";
 
   panel.classList.remove("oculto");
   ocultarAviso("aviso-admin");
@@ -341,7 +471,11 @@ formReserva.addEventListener("submit", async (e) => {
     }
   }
 
-  const datos = { fecha, hora, cantidad_personas: personas, id_mesa: Number(idMesa) };
+  const datos = {
+    fecha, hora, cantidad_personas: personas, id_mesa: Number(idMesa),
+    ocasion: document.getElementById("r-ocasion").value || null,
+    comentarios: document.getElementById("r-comentarios").value.trim() || null,
+  };
   let resultado;
   if (editandoId) {
     resultado = await db.from("reserva").update(datos).eq("id_reserva", editandoId);
@@ -355,6 +489,7 @@ formReserva.addEventListener("submit", async (e) => {
   avisoAdmin("ok", editandoId ? "Reserva actualizada." : "Reserva creada.");
   cerrarPanel();
   cargarReservas();
+  if (fecha === dashFecha.value) cargarDashboard();
 });
 
 // ---------------------------------------------------------
@@ -568,7 +703,7 @@ function pintarClientes() {
 
   const cuerpo = document.getElementById("tabla-clientes");
   if (!lista.length) {
-    cuerpo.innerHTML = `<tr><td colspan="7" class="text-center py-4 texto-suave">No hay clientes que coincidan.</td></tr>`;
+    cuerpo.innerHTML = `<tr><td colspan="8" class="text-center py-4 texto-suave">No hay clientes que coincidan.</td></tr>`;
     return;
   }
   const fechaCorta = (f) => f ? formatearFecha(f) : "–";
@@ -579,6 +714,7 @@ function pintarClientes() {
           ${c.rol === "admin" ? '<span class="estado estado-completada ms-1">Admin</span>' : ""}</div>
         <div class="celda-secundaria">${esc(c.email)}</div>
       </td>
+      <td class="celda-fecha">${c.telefono ? esc(c.telefono) : "–"}</td>
       <td class="celda-fecha">${c.fecha_creacion ? new Date(c.fecha_creacion).toLocaleDateString("es-UY") : "–"}</td>
       <td>${c.total}</td>
       <td>${c.asistio}</td>
@@ -602,5 +738,7 @@ document.getElementById("buscar-cliente").addEventListener("input", pintarClient
   dashFecha.value = hoyISO();
   filtroFecha.value = hoyISO();
   await Promise.all([cargarMesas(), cargarClientes(), cargarReglasTiempo()]);
+  prepararSalon();      // admin-salon.js
   cargarDashboard();
+  cargarSemana();
 })();

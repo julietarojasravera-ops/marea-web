@@ -52,7 +52,7 @@
               <span class="leyenda leyenda-libre">Libre</span>
               <span class="leyenda leyenda-elegida">Tu mesa</span>
               <span class="leyenda leyenda-ocupada">Ocupada</span>
-              <span class="leyenda leyenda-chica">No entra el grupo</span>
+              <span class="leyenda leyenda-chica">No corresponde a tu grupo</span>
             </div>
           </div>
 
@@ -61,6 +61,25 @@
           <div id="resultado" class="resultado oculto">
             <h3>¡Hay mesa!</h3>
             <p id="resultado-texto" class="mb-3"></p>
+            <div class="row g-3 mb-3">
+              <div class="col-md-5">
+                <label class="form-label" for="ocasion">¿Es una ocasión especial? <span class="plano-opcional">(opcional)</span></label>
+                <select class="form-select" id="ocasion">
+                  <option value="">No, una cena más</option>
+                  <option value="cumpleaños">Cumpleaños</option>
+                  <option value="aniversario">Aniversario</option>
+                  <option value="cita">Cita</option>
+                  <option value="negocios">Comida de negocios</option>
+                  <option value="celebración">Celebración</option>
+                  <option value="otra">Otra</option>
+                </select>
+              </div>
+              <div class="col-md-7">
+                <label class="form-label" for="comentarios">Comentarios para el restaurante <span class="plano-opcional">(opcional)</span></label>
+                <textarea class="form-control" id="comentarios" rows="2" maxlength="300"
+                          placeholder="Alergias, silla de bebé, torta para el postre…"></textarea>
+              </div>
+            </div>
             <button type="button" class="btn-marea" id="btn-confirmar">Confirmar reserva</button>
           </div>
         </form>

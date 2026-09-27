@@ -97,6 +97,12 @@ formRegistro.addEventListener("submit", async (e) => {
     boton.disabled = false;
     return;
   }
+  const telefono = document.getElementById("registro-telefono").value.trim();
+  if (!/^[0-9 +()-]{6,20}$/.test(telefono)) {
+    mostrarAviso("aviso-login", "error", "Escribí un teléfono válido, por ejemplo 099 123 456.");
+    boton.disabled = false;
+    return;
+  }
   if (!document.getElementById("registro-privacidad").checked) {
     mostrarAviso("aviso-login", "error", "Para crear la cuenta tenés que aceptar la política de privacidad.");
     boton.disabled = false;
@@ -109,6 +115,7 @@ formRegistro.addEventListener("submit", async (e) => {
     options: {
       data: {
         nombre: document.getElementById("registro-nombre").value.trim(),
+        telefono,
         acepta_privacidad: "si",
       },
     },

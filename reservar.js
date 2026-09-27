@@ -58,7 +58,8 @@ function describirMesaElegida() {
     return;
   }
   const m = mesasPlano.find((x) => x.id_mesa === mesaElegida);
-  textoMesa.textContent = `Elegiste la mesa ${m.numero} (para ${m.capacidad}). Tocala de nuevo para quitarla.`;
+  const zona = m.zona ? `, ${m.zona.toLowerCase()}` : "";
+  textoMesa.textContent = `Elegiste la mesa ${m.numero} (para ${m.capacidad}${zona}). Tocala de nuevo para quitarla.`;
 }
 
 function redibujarPlano() {
@@ -76,6 +77,8 @@ function redibujarPlano() {
           : `La mesa ${mesa.numero} está ocupada a esa hora.`;
       } else if (info.estado === "chica") {
         textoMesa.textContent = `La mesa ${mesa.numero} es para ${mesa.capacidad}: no entra un grupo de ${campoPersonas.value}.`;
+      } else if (info.estado === "grande") {
+        textoMesa.textContent = `La mesa ${mesa.numero} es para ${mesa.capacidad}. Para ${personasTexto(campoPersonas.value)} te damos una mesa más justa.`;
       } else {
         textoMesa.textContent = `La mesa ${mesa.numero} no está disponible.`;
       }
@@ -197,7 +200,7 @@ formBuscar.addEventListener("submit", async (e) => {
     return;
   }
 
-  const mesa = data.mesa ? ` Mesa ${data.mesa}.` : "";
+  const mesa = data.mesa ? ` Mesa ${data.mesa}${data.zona ? ` (${data.zona.toLowerCase()})` : ""}.` : "";
   document.getElementById("resultado-texto").textContent =
     `${formatearFecha(campoFecha.value)}, ${personasTexto(campoPersonas.value)}. ` +
     `La mesa es tuya de ${campoHora.value} a ${data.hasta} (${data.duracion_texto}).${mesa}`;
@@ -214,6 +217,8 @@ botonConfirmar.addEventListener("click", async () => {
     p_hora: campoHora.value,
     p_personas: Number(campoPersonas.value),
     p_id_mesa: mesaElegida,
+    p_ocasion: document.getElementById("ocasion").value || null,
+    p_comentarios: document.getElementById("comentarios").value.trim() || null,
   });
   botonConfirmar.disabled = false;
 

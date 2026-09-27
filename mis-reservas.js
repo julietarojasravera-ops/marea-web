@@ -18,7 +18,8 @@ function tarjetaReserva(r, proxima) {
     <div class="reserva-item ${proxima ? "" : "pasada"}">
       <div>
         <div class="reserva-fecha">${formatearFecha(r.fecha)} · ${formatearHora(r.hora)} a ${sumarMinutos(formatearHora(r.hora), r.duracion_min)}</div>
-        <div class="reserva-detalle">${personas} · Reserva n.º ${r.id_reserva}</div>
+        <div class="reserva-detalle">${personas}${r.mesa ? ` · Mesa ${r.mesa.numero}${r.mesa.zona ? ` (${r.mesa.zona.toLowerCase()})` : ""}` : ""} · Reserva n.º ${r.id_reserva}</div>
+        ${r.ocasion ? `<div class="reserva-ocasion">${NOMBRES_OCASION[r.ocasion] || r.ocasion}</div>` : ""}
       </div>
       <div class="reserva-acciones">
         <span class="estado estado-${r.estado}">${NOMBRES_ESTADO[r.estado] || r.estado}</span>
@@ -39,7 +40,7 @@ function pintarGrupo(idCaja, lista, proxima, textoVacio) {
 async function cargarReservas() {
   const { data, error } = await db
     .from("reserva")
-    .select("id_reserva, fecha, hora, cantidad_personas, estado, duracion_min")
+    .select("id_reserva, fecha, hora, cantidad_personas, estado, duracion_min, ocasion, mesa(numero, zona)")
     .eq("id_usuario", idUsuario)
     .order("fecha", { ascending: true })
     .order("hora", { ascending: true });

@@ -2,12 +2,12 @@
 // Plano del local: dibuja el salón y las mesas en un SVG.
 // Lo usan la página Reservar (elegir mesa) y el panel admin
 // (arrastrar las mesas para que el plano sea igual al local).
-// Coordenadas: x de 0 a 100, y de 0 a 64.
+// Coordenadas: x de 0 a 120, y de 0 a 80.
 // =========================================================
 
 const SVG_NS = "http://www.w3.org/2000/svg";
-const PLANO_ANCHO = 100;
-const PLANO_ALTO = 64;
+const PLANO_ANCHO = 120;
+const PLANO_ALTO = 80;
 
 function nodo(tipo, atributos = {}, texto = null) {
   const el = document.createElementNS(SVG_NS, tipo);
@@ -62,29 +62,32 @@ function posicion(mesa, indice) {
   if (mesa.pos_x !== null && mesa.pos_x !== undefined && mesa.pos_y !== null && mesa.pos_y !== undefined) {
     return [Number(mesa.pos_x), Number(mesa.pos_y)];
   }
-  return [30 + (indice % 4) * 11, 58];
+  return [30 + (indice % 5) * 12, 76];
 }
 
 function dibujarSala(svg) {
   const g = nodo("g", { class: "plano-fondo" });
-  g.appendChild(nodo("rect", { x: 1, y: 3, width: 98, height: 60, rx: 2, class: "plano-sala" }));
+  g.appendChild(nodo("rect", { x: 1, y: 3, width: 118, height: 76, rx: 2, class: "plano-sala" }));
   // Ventanal al mar (arriba)
-  g.appendChild(nodo("rect", { x: 6, y: 1.8, width: 70, height: 2.4, rx: 1, class: "plano-ventanal" }));
   g.appendChild(nodo("path", {
-    d: "M8 0.9 q2 -0.9 4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0",
+    d: "M6 1 q2 -1 4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0 t4 0",
     class: "plano-ola",
   }));
-  g.appendChild(nodo("text", { x: 41, y: 3.65, class: "plano-etiqueta plano-etiqueta-ventanal", "text-anchor": "middle" }, "VENTANAL AL MAR"));
+  g.appendChild(nodo("rect", { x: 4, y: 1.8, width: 90, height: 2.6, rx: 1, class: "plano-ventanal" }));
+  g.appendChild(nodo("text", { x: 49, y: 3.75, class: "plano-etiqueta plano-etiqueta-ventanal", "text-anchor": "middle" }, "VENTANAL AL MAR"));
+  // Zonas (texto suave)
+  g.appendChild(nodo("text", { x: 3.5, y: 26, class: "plano-zona" }, "SALÓN"));
+  g.appendChild(nodo("text", { x: 3.5, y: 62, class: "plano-zona" }, "FONDO"));
   // Barra (derecha)
-  g.appendChild(nodo("rect", { x: 85, y: 9, width: 9, height: 30, rx: 1.5, class: "plano-barra" }));
-  g.appendChild(nodo("text", { x: 89.5, y: 24, class: "plano-etiqueta plano-etiqueta-clara", "text-anchor": "middle",
-    transform: "rotate(-90 89.5 24)" }, "BARRA"));
+  g.appendChild(nodo("rect", { x: 104, y: 22, width: 10, height: 36, rx: 1.5, class: "plano-barra" }));
+  g.appendChild(nodo("text", { x: 109, y: 40, class: "plano-etiqueta plano-etiqueta-clara", "text-anchor": "middle",
+    transform: "rotate(-90 109 40)" }, "BARRA"));
   // Cocina (abajo a la derecha)
-  g.appendChild(nodo("rect", { x: 76, y: 46, width: 23, height: 17, class: "plano-cocina" }));
-  g.appendChild(nodo("text", { x: 87.5, y: 55.5, class: "plano-etiqueta", "text-anchor": "middle" }, "COCINA"));
-  // Entrada (abajo a la izquierda)
-  g.appendChild(nodo("rect", { x: 5, y: 61.6, width: 12, height: 2.8, class: "plano-entrada" }));
-  g.appendChild(nodo("text", { x: 11, y: 60, class: "plano-etiqueta", "text-anchor": "middle" }, "ENTRADA"));
+  g.appendChild(nodo("rect", { x: 96, y: 62, width: 23, height: 17, class: "plano-cocina" }));
+  g.appendChild(nodo("text", { x: 107.5, y: 71.5, class: "plano-etiqueta", "text-anchor": "middle" }, "COCINA"));
+  // Entrada (arriba a la derecha)
+  g.appendChild(nodo("rect", { x: 100, y: 1.6, width: 15, height: 2.8, class: "plano-entrada" }));
+  g.appendChild(nodo("text", { x: 107.5, y: 8.5, class: "plano-etiqueta", "text-anchor": "middle" }, "ENTRADA"));
   svg.appendChild(g);
 }
 
@@ -104,9 +107,11 @@ function dibujarPlano(svg, mesas, opciones = {}) {
 
   mesas.forEach((mesa, i) => {
     const [x, y] = posicion(mesa, i);
+    mesa.etiquetaExtra = opciones.etiqueta ? opciones.etiqueta(mesa) : null;
     const info = (opciones.estados && opciones.estados[mesa.id_mesa]) || { estado: mesa.estado === "inactiva" ? "inactiva" : "neutra" };
     const elegida = opciones.seleccion === mesa.id_mesa;
-    const clase = `mesa-plano mesa-${info.estado}${elegida ? " mesa-elegida" : ""}`;
+    const marcada = opciones.marcada === mesa.id_mesa;
+    const clase = `mesa-plano mesa-${info.estado}${elegida ? " mesa-elegida" : ""}${marcada ? " mesa-marcada" : ""}`;
     const grupo = nodo("g", {
       class: clase,
       transform: `translate(${x} ${y})`,
@@ -125,6 +130,10 @@ function dibujarPlano(svg, mesas, opciones = {}) {
       grupo.appendChild(nodo("rect", { x: -m.w / 2, y: -m.h / 2, width: m.w, height: m.h, rx: 1.2, class: "tabla" }));
     }
     grupo.appendChild(nodo("text", { x: 0, y: 0.4, class: "mesa-numero", "text-anchor": "middle", "dominant-baseline": "middle" }, mesa.numero));
+    if (mesa.etiquetaExtra) {
+      const alto = m.forma === "redonda" ? m.r + 5.2 : m.h / 2 + 5.4;
+      grupo.appendChild(nodo("text", { x: 0, y: alto, class: "mesa-extra", "text-anchor": "middle" }, mesa.etiquetaExtra));
+    }
 
     if (!opciones.editable && opciones.alElegir) {
       const elegir = () => opciones.alElegir(mesa, info);
@@ -143,7 +152,12 @@ function textoEstadoMesa(info) {
     case "libre": return "libre";
     case "ocupada": return info.libre_desde ? `ocupada, se libera a las ${info.libre_desde}` : "ocupada";
     case "chica": return "no entra el grupo";
+    case "grande": return "para grupos más grandes";
     case "inactiva": return "no disponible";
+    case "reservada": return "reservada";
+    case "sentada": return "con clientes";
+    case "proxima": return "llegan pronto";
+    case "limpieza": return "en limpieza";
     default: return "mesa";
   }
 }
@@ -172,8 +186,8 @@ function activarArrastre(svg, grupo, mesa, alMover) {
   grupo.addEventListener("pointermove", (e) => {
     if (!arrastrando) return;
     const p = puntoEnPlano(svg, e);
-    const x = Math.min(96, Math.max(4, p.x - desplazamiento[0]));
-    const y = Math.min(60, Math.max(8, p.y - desplazamiento[1]));
+    const x = Math.min(PLANO_ANCHO - 4, Math.max(4, p.x - desplazamiento[0]));
+    const y = Math.min(PLANO_ALTO - 4, Math.max(8, p.y - desplazamiento[1]));
     actual = [Math.round(x * 2) / 2, Math.round(y * 2) / 2];
     grupo.setAttribute("transform", `translate(${actual[0]} ${actual[1]})`);
   });

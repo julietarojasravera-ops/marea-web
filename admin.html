@@ -24,7 +24,7 @@
       <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
         <div>
           <h1 class="pagina-titulo mb-1">Panel de administración</h1>
-          <p class="pagina-bajada mb-0" id="saludo"></p>
+          <p class="pagina-bajada mb-0"><span id="saludo"></span> · <a class="enlace-olvide" href="nueva-clave.html">Cambiar contraseña</a></p>
         </div>
         <div class="pestanas pestanas-admin mb-0">
           <button type="button" class="pestana activa" data-seccion="dashboard">Dashboard</button>
@@ -38,45 +38,130 @@
 
       <!-- ================= DASHBOARD ================= -->
       <section id="sec-dashboard" class="seccion-admin">
-        <div class="d-flex align-items-center gap-3 flex-wrap mb-4">
-          <label class="form-label mb-0" for="dash-fecha">Día</label>
-          <input class="form-control campo-fecha" type="date" id="dash-fecha">
+        <!-- Navegación de días -->
+        <div class="barra-dia">
+          <button type="button" class="btn-dia" id="dia-anterior" aria-label="Día anterior">‹</button>
+          <input class="form-control campo-fecha" type="date" id="dash-fecha" aria-label="Día">
+          <button type="button" class="btn-dia" id="dia-siguiente" aria-label="Día siguiente">›</button>
+          <button type="button" class="btn-borde" id="dia-hoy">Hoy</button>
+          <span class="dia-texto" id="dash-dia-texto"></span>
+          <button type="button" class="btn-borde ms-auto" id="btn-actualizar">↻ Actualizar</button>
         </div>
 
         <div id="alerta-ocupacion" class="alerta-ocupacion oculto" role="alert"></div>
 
+        <!-- Indicadores -->
         <div class="row g-3">
-          <div class="col-6 col-lg-3">
+          <div class="col-6 col-md-4 col-xl-2">
             <div class="kpi">
               <div class="kpi-valor" id="kpi-reservas">–</div>
-              <div class="kpi-nombre">Reservas del día</div>
+              <div class="kpi-nombre">Reservas</div>
             </div>
           </div>
-          <div class="col-6 col-lg-3">
+          <div class="col-6 col-md-4 col-xl-2">
             <div class="kpi">
               <div class="kpi-valor" id="kpi-personas">–</div>
-              <div class="kpi-nombre">Personas esperadas</div>
+              <div class="kpi-nombre">Cubiertos</div>
+              <div class="kpi-nota" id="kpi-personas-nota"></div>
             </div>
           </div>
-          <div class="col-6 col-lg-3">
+          <div class="col-6 col-md-4 col-xl-2">
             <div class="kpi kpi-destacado" id="kpi-ocupacion-caja">
               <div class="kpi-valor" id="kpi-ocupacion">–</div>
-              <div class="kpi-nombre">Ocupación en hora pico</div>
+              <div class="kpi-nombre">Ocupación pico</div>
               <div class="kpi-nota" id="kpi-ocupacion-nota"></div>
             </div>
           </div>
-          <div class="col-6 col-lg-3">
+          <div class="col-6 col-md-4 col-xl-2">
+            <div class="kpi">
+              <div class="kpi-valor" id="kpi-sentadas">–</div>
+              <div class="kpi-nombre">En el salón ahora</div>
+              <div class="kpi-nota" id="kpi-sentadas-nota"></div>
+            </div>
+          </div>
+          <div class="col-6 col-md-4 col-xl-2">
             <div class="kpi">
               <div class="kpi-valor" id="kpi-canceladas">–</div>
               <div class="kpi-nombre">Cancelaciones</div>
             </div>
           </div>
+          <div class="col-6 col-md-4 col-xl-2">
+            <div class="kpi">
+              <div class="kpi-valor" id="kpi-noshow">–</div>
+              <div class="kpi-nombre">No vinieron</div>
+              <div class="kpi-nota" id="kpi-noshow-nota"></div>
+            </div>
+          </div>
         </div>
 
+        <!-- Salón en vivo + detalle -->
+        <div class="row g-4 mt-1">
+          <div class="col-xl-8">
+            <div class="tarjeta">
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h2 class="grupo-titulo my-0">Salón en vivo</h2>
+                <div class="d-flex align-items-center gap-2">
+                  <label class="form-label mb-0" for="salon-hora">Hora</label>
+                  <select class="form-select form-select-sm campo-hora" id="salon-hora"></select>
+                  <button type="button" class="btn-borde" id="salon-ahora">Ahora</button>
+                </div>
+              </div>
+              <svg id="plano-salon" class="plano" role="group" aria-label="Estado de las mesas a la hora elegida"></svg>
+              <div class="plano-leyenda">
+                <span class="leyenda leyenda-libre">Libre</span>
+                <span class="leyenda leyenda-proxima">Llegan en menos de 30 min</span>
+                <span class="leyenda leyenda-reservada">Reservada</span>
+                <span class="leyenda leyenda-sentada">Con clientes</span>
+                <span class="leyenda leyenda-limpieza">En limpieza</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-4">
+            <div class="tarjeta panel-detalle" id="detalle-mesa">
+              <h2 class="grupo-titulo mt-0">Detalle de mesa</h2>
+              <p class="pagina-bajada mb-0">Tocá una mesa del plano o una barra de la línea de tiempo.</p>
+            </div>
+            <div class="tarjeta mt-4">
+              <h2 class="grupo-titulo mt-0">Próximas llegadas</h2>
+              <div id="proximas-llegadas"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Línea de tiempo -->
         <div class="tarjeta mt-4">
-          <h2 class="grupo-titulo mt-0">Reservas por horario</h2>
-          <p class="pagina-bajada">Cuántas reservas empiezan en cada horario. Sirve para ver los momentos de mayor demanda.</p>
-          <div class="grafico" id="grafico-horas"></div>
+          <div class="d-flex justify-content-between align-items-baseline flex-wrap gap-2">
+            <h2 class="grupo-titulo my-0">Línea de tiempo</h2>
+            <p class="plano-ayuda mb-0">Cada fila es una mesa. La parte rayada es la limpieza.</p>
+          </div>
+          <div class="linea-caja">
+            <svg id="linea-tiempo" class="linea-tiempo" role="img" aria-label="Reservas del día por mesa y horario"></svg>
+          </div>
+        </div>
+
+        <!-- Horarios y semana -->
+        <div class="row g-4 mt-1">
+          <div class="col-lg-6">
+            <div class="tarjeta h-100">
+              <h2 class="grupo-titulo mt-0">Reservas por horario</h2>
+              <p class="pagina-bajada">Cuántas reservas empiezan en cada media hora.</p>
+              <div class="grafico" id="grafico-horas"></div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="tarjeta h-100">
+              <h2 class="grupo-titulo mt-0">Últimos 7 días</h2>
+              <div class="tabla-simple">
+                <table class="table tabla-marea align-middle mb-0">
+                  <thead>
+                    <tr><th>Día</th><th>Reservas</th><th>Cubiertos</th><th>Cancel.</th><th>No vino</th></tr>
+                  </thead>
+                  <tbody id="tabla-semana"></tbody>
+                  <tfoot id="pie-semana"></tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -100,8 +185,15 @@
               </select>
             </div>
             <button type="button" class="btn-borde" id="btn-ver-todas">Ver todos los días</button>
+            <div>
+              <label class="form-label" for="buscar-reserva">Buscar</label>
+              <input class="form-control campo-buscar" type="search" id="buscar-reserva" placeholder="Nombre, correo o teléfono">
+            </div>
           </div>
-          <button type="button" class="btn-marea oscuro" id="btn-nueva-reserva">Nueva reserva</button>
+          <div class="d-flex gap-2 flex-wrap">
+            <button type="button" class="btn-borde" id="btn-exportar">⬇ Exportar CSV</button>
+            <button type="button" class="btn-marea oscuro" id="btn-nueva-reserva">Nueva reserva</button>
+          </div>
         </div>
 
         <!-- Formulario para crear o editar -->
@@ -129,6 +221,22 @@
                 <label class="form-label" for="r-mesa">Mesa</label>
                 <select class="form-select" id="r-mesa"></select>
               </div>
+              <div class="col-md-3">
+                <label class="form-label" for="r-ocasion">Ocasión</label>
+                <select class="form-select" id="r-ocasion">
+                  <option value="">Ninguna</option>
+                  <option value="cumpleaños">Cumpleaños</option>
+                  <option value="aniversario">Aniversario</option>
+                  <option value="cita">Cita</option>
+                  <option value="negocios">Negocios</option>
+                  <option value="celebración">Celebración</option>
+                  <option value="otra">Otra</option>
+                </select>
+              </div>
+              <div class="col-md-5">
+                <label class="form-label" for="r-comentarios">Comentarios</label>
+                <input class="form-control" type="text" id="r-comentarios" maxlength="300" placeholder="Alergias, silla de bebé…">
+              </div>
             </div>
             <div class="d-flex gap-3 mt-4 flex-wrap">
               <button type="submit" class="btn-marea oscuro">Guardar</button>
@@ -146,6 +254,7 @@
                 <th>Horario</th>
                 <th>Pers.</th>
                 <th>Mesa</th>
+                <th>Notas</th>
                 <th>Estado</th>
                 <th></th>
               </tr>
@@ -257,6 +366,7 @@
             <thead>
               <tr>
                 <th>Cliente</th>
+                <th>Teléfono</th>
                 <th>Registro</th>
                 <th>Reservas</th>
                 <th>Asistió</th>
@@ -277,5 +387,6 @@
   <script src="comun.js"></script>
   <script src="plano.js"></script>
   <script src="admin.js"></script>
+  <script src="admin-salon.js"></script>
 </body>
 </html>

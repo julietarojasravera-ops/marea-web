@@ -607,3 +607,99 @@ a { color: var(--azul-ola); }
   .nav-enlaces a, .enlace-boton { font-size: 0.85rem; white-space: nowrap; }
   .marca { letter-spacing: 0.18em; }
 }
+
+/* Profesional: ocasión, zonas y estados nuevos del plano */
+.reserva-ocasion { font-size: 0.85rem; color: var(--azul-ola); margin-top: 0.2rem; }
+.plano-zona { font-family: var(--fuente-texto); font-size: 2px; letter-spacing: 0.5px; fill: #b8ad97; font-weight: 600; }
+.mesa-extra { font-family: var(--fuente-texto); font-size: 1.9px; fill: var(--azul-marea); font-weight: 600; pointer-events: none; }
+
+.mesa-grande .tabla { fill: #f4f0e8; stroke: #cfc6b4; stroke-dasharray: 0.8 0.6; }
+.mesa-grande .silla { fill: #f4f0e8; stroke: #cfc6b4; }
+.mesa-grande .mesa-numero { fill: #b3a996; }
+
+/* Salón en vivo (panel admin) */
+.mesa-reservada .tabla { fill: #dde8f3; stroke: var(--azul-ola); }
+.mesa-reservada .silla { fill: #c3d5e8; stroke: var(--azul-ola); }
+.mesa-reservada .mesa-numero { fill: var(--azul-marea); }
+.mesa-sentada .tabla { fill: var(--azul-marea); stroke: var(--azul-noche); }
+.mesa-sentada .silla { fill: var(--arena); stroke: var(--azul-marea); }
+.mesa-sentada .mesa-numero { fill: #fff; }
+.mesa-proxima .tabla { fill: #fff4d9; stroke: #d19a1f; }
+.mesa-proxima .silla { fill: #f5dfa8; stroke: #d19a1f; }
+.mesa-proxima .mesa-numero { fill: #7a5a12; }
+.mesa-limpieza .tabla { fill: #f1ece3; stroke: #a79f91; stroke-dasharray: 1 0.6; }
+.mesa-limpieza .silla { fill: #f1ece3; stroke: #a79f91; }
+.mesa-limpieza .mesa-numero { fill: #8c8374; }
+.mesa-marcada .tabla { stroke: var(--coral); stroke-width: 0.9; }
+
+.leyenda-reservada::before { background: #dde8f3; border-color: var(--azul-ola); }
+.leyenda-sentada::before { background: var(--azul-marea); border-color: var(--azul-noche); }
+.leyenda-proxima::before { background: #fff4d9; border-color: #d19a1f; }
+.leyenda-limpieza::before { background: #f1ece3; border-color: #a79f91; border-style: dashed; }
+
+/* =========================================================
+   PANEL PROFESIONAL
+   ========================================================= */
+.barra-dia {
+  display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+  background: var(--espuma); border-radius: var(--radio); box-shadow: var(--sombra);
+  padding: 0.8rem 1rem; margin-bottom: 1.4rem;
+}
+.btn-dia {
+  width: 2.4rem; height: 2.4rem; border-radius: 50%;
+  border: 1.5px solid var(--azul-marea); background: #fff; color: var(--azul-marea);
+  font-size: 1.3rem; line-height: 1; padding: 0;
+}
+.btn-dia:hover { background: var(--azul-marea); color: #fff; }
+.dia-texto { display: inline-block; font-family: var(--fuente-titulo); font-size: 1.2rem; color: var(--azul-marea); }
+.dia-texto::first-letter { text-transform: uppercase; }
+.campo-hora { min-width: 104px; max-width: 130px; }
+
+.kpi-valor { font-size: 2.2rem; }
+
+.panel-detalle { min-height: 180px; }
+.detalle-reserva { border-top: 1px solid #efe8da; padding: 0.8rem 0; }
+.detalle-reserva:first-of-type { border-top: 0; }
+.detalle-comentario { font-size: 0.88rem; color: var(--tinta); background: var(--arena-clara); border-radius: 8px; padding: 0.4rem 0.6rem; margin-top: 0.4rem; }
+.nota-ocasion { font-size: 0.85rem; color: var(--azul-ola); font-weight: 600; margin-top: 0.2rem; }
+.celda-notas { max-width: 220px; }
+.acciones-reserva.justify-content-start { justify-content: flex-start; }
+
+.llegada { display: flex; align-items: center; gap: 0.8rem; padding: 0.6rem 0; border-top: 1px solid #efe8da; }
+.llegada:first-child { border-top: 0; }
+.llegada-hora { font-family: var(--fuente-titulo); font-size: 1.25rem; color: var(--azul-marea); min-width: 3.4rem; }
+.llegada-datos { flex: 1; min-width: 0; }
+.llegada-atrasada .llegada-hora { color: var(--coral); }
+
+/* Línea de tiempo */
+.linea-caja { overflow-x: auto; margin-top: 0.8rem; }
+.linea-tiempo { display: block; width: 100%; min-width: 760px; height: auto; }
+.lt-fila { fill: #fff; }
+.lt-fila-par { fill: #faf6ef; }
+.lt-mesa { font-family: var(--fuente-texto); font-size: 11px; font-weight: 600; fill: var(--azul-marea); }
+.lt-cap { font-family: var(--fuente-texto); font-size: 10px; fill: var(--gris-suave); }
+.lt-hora { font-family: var(--fuente-texto); font-size: 11px; font-weight: 600; fill: var(--gris-suave); }
+.lt-grilla { stroke: #efe8da; stroke-width: 1; }
+.lt-grilla-hora { stroke: #ddd3c0; }
+.lt-reserva { cursor: pointer; outline: none; }
+.lt-barra { stroke-width: 1.2; }
+.lt-texto { font-family: var(--fuente-texto); font-size: 10.5px; font-weight: 600; pointer-events: none; }
+.lt-limpieza { fill: url(#rayado); }
+.rayado-fondo { fill: #f1ece3; }
+.rayado-linea { stroke: #cfc6b4; stroke-width: 2; }
+.lt-confirmada .lt-barra { fill: #dde8f3; stroke: var(--azul-ola); }
+.lt-confirmada .lt-texto { fill: var(--azul-marea); }
+.lt-sentada .lt-barra { fill: var(--azul-marea); stroke: var(--azul-noche); }
+.lt-sentada .lt-texto { fill: #fff; }
+.lt-completada .lt-barra { fill: #e6f2eb; stroke: var(--verde-alga); }
+.lt-completada .lt-texto { fill: #24513a; }
+.lt-no_asistio .lt-barra { fill: #fbe9e5; stroke: var(--coral); stroke-dasharray: 3 2; }
+.lt-no_asistio .lt-texto { fill: #8a2f1e; }
+.lt-reserva:hover .lt-barra, .lt-reserva:focus .lt-barra { stroke-width: 2.4; }
+.lt-ahora { stroke: var(--coral); stroke-width: 2; }
+.lt-ahora-texto { font-family: var(--fuente-texto); font-size: 10px; font-weight: 700; fill: var(--coral); }
+
+/* Semana */
+.tabla-simple { overflow-x: auto; }
+.fila-hoy td { background: #f3f7fb; font-weight: 600; }
+.fila-total td { font-weight: 700; color: var(--azul-marea); border-top: 2px solid var(--arena); }

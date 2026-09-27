@@ -42,7 +42,7 @@ db.auth.onAuthStateChange((evento, sesion) => {
   }
   // Damos un momento por si Supabase todavía está procesando el enlace
   setTimeout(() => {
-    mostrarEnlaceInvalido("Para cambiar la contraseña tenés que entrar desde el enlace que te mandamos por correo.");
+    mostrarEnlaceInvalido("Para cambiar la contraseña, iniciá sesión o entrá desde el enlace que te mandamos por correo.");
   }, 2500);
 })();
 

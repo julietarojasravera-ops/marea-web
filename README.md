@@ -1,6 +1,7 @@
 # Marea — Sistema de reservas y fidelización para restaurantes
 
 Aplicación web para que un restaurante gestione **reservas, mesas y clientes** desde un único sistema.
+Marea tiene **20 mesas y 84 lugares** en cuatro zonas: ventanal al mar, salón, barra y fondo.
 Proyecto académico — Incorporación Estratégica · Universidad ORT Uruguay.
 
 🔗 **Demo online:** https://marea-web-sooty.vercel.app
@@ -17,22 +18,24 @@ Proyecto académico — Incorporación Estratégica · Universidad ORT Uruguay.
 ## Qué hace (Parte A)
 
 **Cliente**
-- Se registra e inicia sesión, y puede recuperar su contraseña por correo.
+- Se registra (nombre, teléfono, correo) e inicia sesión; puede recuperar o cambiar su contraseña.
 - Consulta disponibilidad por fecha, horario y cantidad de personas, viendo el **plano del local** con las mesas libres y ocupadas.
-- Puede **elegir su mesa** en el plano (o dejar que el sistema asigne la mejor).
+- Puede **elegir su mesa** en el plano (o dejar que el sistema asigne la mejor). Solo puede elegir mesas **justas para su grupo**: 4 personas → mesa de 4; 5 personas → mesa de 6 (nunca una de 8).
+- Puede indicar una **ocasión especial** (cumpleaños, aniversario, negocios…) y **comentarios** (alergias, silla de bebé).
 - Si no hay lugar, el sistema **sugiere los horarios libres más cercanos** o el próximo día con lugar.
 - Reserva: el sistema asigna automáticamente la mesa más chica que sirva y le dice hasta qué hora es la mesa.
 - Ve sus reservas (próximas y pasadas) y puede cancelarlas.
 - Recibe correos automáticos: confirmación, cambios y cancelaciones.
 
-**Administrador**
-- **Dashboard:** reservas del día, personas esperadas, ocupación en hora pico, cancelaciones y reservas por horario.
+**Administrador** (panel profesional)
+- **Navegación por días** (ayer / hoy / mañana) e indicadores: reservas, cubiertos, ocupación pico, gente en el salón ahora, cancelaciones y no-shows.
+- **Salón en vivo:** plano con el estado de cada mesa a la hora elegida (libre, llegan pronto, reservada, con clientes, en limpieza). Al tocar una mesa se ven sus reservas del día, la ocasión y los comentarios, con acciones *Sentar*, *Liberar mesa*, *+15 min* y *No vino*.
+- **Línea de tiempo:** una fila por mesa y una barra por reserva, con la limpieza rayada y la línea de "ahora".
+- **Próximas llegadas** con aviso de demorados, **reservas por horario** y **resumen de los últimos 7 días** (tasas de cancelación y no-show).
+- **Reservas:** filtros por día y estado, buscador por nombre, correo o teléfono, creación y edición (con ocasión y comentarios) y **exportar a CSV** (Excel / Google Sheets).
+- **Mesas:** plano del local para acomodar las mesas arrastrándolas, capacidad, forma, activar/desactivar, y **tiempos de mesa** configurables.
+- **Clientes:** listado con teléfono, reservas, asistencias, cancelaciones, última visita y próxima reserva.
 - **Alerta de ocupación:** aviso en el panel y por correo cuando un horario llega al 80 %.
-- **Reservas:** consultar, filtrar, crear, modificar y cancelar (el cliente recibe aviso por correo).
-- **Mesas:** agregar, cambiar capacidad y forma, activar y desactivar, y **acomodarlas en el plano arrastrándolas**.
-- **Salón en vivo:** marcar *Sentada* cuando llegan, *Liberar mesa* cuando se van y *+15 min* si se quedan más.
-- **Tiempos de mesa:** horario, turnos, limpieza, ritmo de cocina y duración por tamaño de grupo, editables.
-- **Clientes:** listado con reservas, asistencias, cancelaciones, última visita y próxima reserva.
 
 ## Tiempos de mesa (como los sistemas profesionales)
 
@@ -44,7 +47,8 @@ Inspirado en cómo trabajan OpenTable, Resy o SevenRooms:
 | Limpieza entre reservas (buffer) | 15 min |
 | Turnos | cada 15 min, de 19:00 a 00:00 |
 | Última reserva | la cena debe terminar antes del cierre (pareja 22:30, grupo de 6 21:30) |
-| Ritmo de cocina ("cover pacing") | máximo 12 personas empezando en el mismo turno |
+| Ritmo de cocina ("cover pacing") | máximo 16 personas empezando en el mismo turno |
+| Mesa justa | la mesa puede tener como máximo 1 lugar vacío (todas las mesas son de capacidad par) |
 | Salón en vivo | liberar la mesa si se van antes, extender si se quedan; los "no asistió" liberan la mesa |
 
 ## Reglas garantizadas por la base de datos
@@ -95,6 +99,7 @@ Navegador ──► Vercel (sitio) ──► Supabase (Auth + API + PostgreSQL)
 | `reservar.html` / `reservar.js` | Consulta de disponibilidad y reserva |
 | `mis-reservas.html` / `mis-reservas.js` | Reservas del cliente |
 | `admin.html` / `admin.js` | Panel: Dashboard, Reservas, Mesas, Clientes |
+| `admin-salon.js` | Salón en vivo, línea de tiempo y próximas llegadas del panel |
 | `comun.js` | Funciones compartidas (sesión, roles, mensajes, tiempos de mesa) |
 | `plano.js` | Dibuja el plano del local (elegir mesa y editor del admin) |
 | `config.js` | Conexión a Supabase (clave pública) |
@@ -107,15 +112,16 @@ Navegador ──► Vercel (sitio) ──► Supabase (Auth + API + PostgreSQL)
 | `sql-4-seguridad.sql` | Límite de reservas por cliente, secreto del webhook y consentimiento de privacidad |
 | `sql-5-tiempos-de-mesa.sql` | Tiempo de mesa por grupo, limpieza, cierre, ritmo de cocina, estado sentada, extender |
 | `sql-6-plano-y-alternativas.sql` | Forma y ubicación de las mesas, estado de cada mesa, elegir mesa y horarios alternativos |
+| `sql-7-profesional.sql` | 20 mesas con zonas, mesa justa por grupo, ocasión y comentarios, teléfono del cliente |
 
-Los SQL se corren en ese orden en el SQL Editor de Supabase. La dirección del webhook de Make
+Los SQL se corren en ese orden en el SQL Editor de Supabase. Las cuentas de administradores se crean con un script aparte que **no** está en el repositorio (tiene contraseñas). La dirección del webhook de Make
 y el correo del administrador se configuran aparte en la tabla `config_app` (no están en el repositorio).
 
 ## Modelo de datos (Parte A)
 
-- **usuario** (id_usuario, nombre, email, rol, fecha_nacimiento, fecha_creacion)
-- **mesa** (id_mesa, numero, capacidad, estado, forma, pos_x, pos_y)
-- **reserva** (id_reserva, id_usuario → usuario, id_mesa → mesa, fecha, hora, cantidad_personas, duracion_min, limpieza_min, estado)
+- **usuario** (id_usuario, nombre, email, telefono, rol, fecha_nacimiento, fecha_acepta_privacidad, fecha_creacion)
+- **mesa** (id_mesa, numero, capacidad par, estado, zona, forma, pos_x, pos_y)
+- **reserva** (id_reserva, id_usuario → usuario, id_mesa → mesa, fecha, hora, cantidad_personas, duracion_min, limpieza_min, estado, ocasion, comentarios)
 - **duracion_por_grupo** (hasta_personas, minutos) y **ajustes_reserva** (apertura, cierre, turnos, limpieza, máx. personas por turno)
 
 Relaciones: USUARIO 1 — N RESERVA · MESA 1 — N RESERVA.

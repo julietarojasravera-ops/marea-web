@@ -92,6 +92,9 @@ function mensajeDeError(error) {
   if (m.includes("Password should")) return "La contraseña tiene que tener al menos 8 caracteres, con letras y números.";
   if (m.includes("New password should be different")) return "La contraseña nueva tiene que ser distinta a la anterior.";
   if (m.includes("not authorized")) return "No pudimos enviar el correo a esa dirección. Avisale al restaurante.";
+  if (m.includes("reserva_ocasion_ok")) return "Elegí una ocasión de la lista.";
+  if (m.includes("reserva_comentarios_ok")) return "Los comentarios pueden tener hasta 300 caracteres.";
+  if (m.includes("mesa_capacidad_par")) return "Las mesas tienen que ser de capacidad par (2, 4, 6, 8…).";
   if (m.includes("rate limit") || m.includes("too many")) return "Demasiados intentos seguidos. Esperá unos minutos y probá de nuevo.";
   if (m.includes("exclusion constraint") || m.includes("sin_superposicion"))
     return "Esa mesa se acaba de ocupar. Probá de nuevo.";
@@ -113,6 +116,15 @@ function formatearFecha(fechaISO) {
 function formatearHora(hora) {
   return hora.slice(0, 5); // "20:30:00" -> "20:30"
 }
+
+const NOMBRES_OCASION = {
+  "cumpleaños": "🎂 Cumpleaños",
+  aniversario: "💞 Aniversario",
+  cita: "🌹 Cita",
+  negocios: "💼 Negocios",
+  "celebración": "🥂 Celebración",
+  otra: "✨ Ocasión especial",
+};
 
 const NOMBRES_ESTADO = {
   confirmada: "Confirmada",
