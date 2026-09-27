@@ -360,14 +360,31 @@ formReserva.addEventListener("submit", async (e) => {
 // ---------------------------------------------------------
 // MESAS
 // ---------------------------------------------------------
+function pintarPlanoAdmin() {
+  dibujarPlano(document.getElementById("plano-admin"), mesas, {
+    editable: true,
+    alMover: async (mesa, x, y) => {
+      const { error } = await db.from("mesa").update({ pos_x: x, pos_y: y }).eq("id_mesa", mesa.id_mesa);
+      if (error) { avisoAdmin("error", mensajeDeError(error)); return; }
+      mesa.pos_x = x;
+      mesa.pos_y = y;
+    },
+  });
+}
+
 function pintarMesas() {
+  pintarPlanoAdmin();
   document.getElementById("tabla-mesas").innerHTML = mesas.map((m) => `
     <tr>
       <td class="celda-principal">Mesa ${m.numero}</td>
       <td>
         <div class="d-flex gap-2 align-items-center">
           <input class="form-control form-control-sm campo-corto" type="number" min="1" max="20"
-                 value="${m.capacidad}" data-capacidad="${m.id_mesa}">
+                 value="${m.capacidad}" data-capacidad="${m.id_mesa}" aria-label="Capacidad de la mesa ${m.numero}">
+          <select class="form-select form-select-sm campo-forma" data-forma="${m.id_mesa}" aria-label="Forma de la mesa ${m.numero}">
+            ${["redonda", "cuadrada", "rectangular"].map((f) =>
+              `<option value="${f}" ${formaDe(m) === f ? "selected" : ""}>${f[0].toUpperCase() + f.slice(1)}</option>`).join("")}
+          </select>
           <button type="button" class="btn-borde" data-guardar="${m.id_mesa}">Guardar</button>
         </div>
       </td>
@@ -391,7 +408,8 @@ document.getElementById("tabla-mesas").addEventListener("click", async (e) => {
     const id = Number(guardar.dataset.guardar);
     const capacidad = Number(document.querySelector(`[data-capacidad="${id}"]`).value);
     if (capacidad < 1) { avisoAdmin("error", "La capacidad tiene que ser 1 o más."); return; }
-    resultado = await db.from("mesa").update({ capacidad }).eq("id_mesa", id);
+    const forma = document.querySelector(`[data-forma="${id}"]`).value;
+    resultado = await db.from("mesa").update({ capacidad, forma }).eq("id_mesa", id);
   } else {
     const id = Number(alternar.dataset.alternar);
     const mesa = mesas.find((m) => m.id_mesa === id);

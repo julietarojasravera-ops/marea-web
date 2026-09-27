@@ -18,7 +18,9 @@ Proyecto académico — Incorporación Estratégica · Universidad ORT Uruguay.
 
 **Cliente**
 - Se registra e inicia sesión, y puede recuperar su contraseña por correo.
-- Consulta disponibilidad por fecha, horario y cantidad de personas.
+- Consulta disponibilidad por fecha, horario y cantidad de personas, viendo el **plano del local** con las mesas libres y ocupadas.
+- Puede **elegir su mesa** en el plano (o dejar que el sistema asigne la mejor).
+- Si no hay lugar, el sistema **sugiere los horarios libres más cercanos** o el próximo día con lugar.
 - Reserva: el sistema asigna automáticamente la mesa más chica que sirva y le dice hasta qué hora es la mesa.
 - Ve sus reservas (próximas y pasadas) y puede cancelarlas.
 - Recibe correos automáticos: confirmación, cambios y cancelaciones.
@@ -27,7 +29,7 @@ Proyecto académico — Incorporación Estratégica · Universidad ORT Uruguay.
 - **Dashboard:** reservas del día, personas esperadas, ocupación en hora pico, cancelaciones y reservas por horario.
 - **Alerta de ocupación:** aviso en el panel y por correo cuando un horario llega al 80 %.
 - **Reservas:** consultar, filtrar, crear, modificar y cancelar (el cliente recibe aviso por correo).
-- **Mesas:** agregar, cambiar capacidad, activar y desactivar.
+- **Mesas:** agregar, cambiar capacidad y forma, activar y desactivar, y **acomodarlas en el plano arrastrándolas**.
 - **Salón en vivo:** marcar *Sentada* cuando llegan, *Liberar mesa* cuando se van y *+15 min* si se quedan más.
 - **Tiempos de mesa:** horario, turnos, limpieza, ritmo de cocina y duración por tamaño de grupo, editables.
 - **Clientes:** listado con reservas, asistencias, cancelaciones, última visita y próxima reserva.
@@ -93,7 +95,8 @@ Navegador ──► Vercel (sitio) ──► Supabase (Auth + API + PostgreSQL)
 | `reservar.html` / `reservar.js` | Consulta de disponibilidad y reserva |
 | `mis-reservas.html` / `mis-reservas.js` | Reservas del cliente |
 | `admin.html` / `admin.js` | Panel: Dashboard, Reservas, Mesas, Clientes |
-| `comun.js` | Funciones compartidas (sesión, roles, mensajes) |
+| `comun.js` | Funciones compartidas (sesión, roles, mensajes, tiempos de mesa) |
+| `plano.js` | Dibuja el plano del local (elegir mesa y editor del admin) |
 | `config.js` | Conexión a Supabase (clave pública) |
 | `estilos.css` | Paleta de colores y estilos |
 | `privacidad.html` | Política de privacidad (Ley 18.331) |
@@ -103,6 +106,7 @@ Navegador ──► Vercel (sitio) ──► Supabase (Auth + API + PostgreSQL)
 | `sql-3-correos-armados.sql` | Arma el asunto y el diseño de cada correo antes de enviarlo a Make |
 | `sql-4-seguridad.sql` | Límite de reservas por cliente, secreto del webhook y consentimiento de privacidad |
 | `sql-5-tiempos-de-mesa.sql` | Tiempo de mesa por grupo, limpieza, cierre, ritmo de cocina, estado sentada, extender |
+| `sql-6-plano-y-alternativas.sql` | Forma y ubicación de las mesas, estado de cada mesa, elegir mesa y horarios alternativos |
 
 Los SQL se corren en ese orden en el SQL Editor de Supabase. La dirección del webhook de Make
 y el correo del administrador se configuran aparte en la tabla `config_app` (no están en el repositorio).
@@ -110,7 +114,7 @@ y el correo del administrador se configuran aparte en la tabla `config_app` (no 
 ## Modelo de datos (Parte A)
 
 - **usuario** (id_usuario, nombre, email, rol, fecha_nacimiento, fecha_creacion)
-- **mesa** (id_mesa, numero, capacidad, estado)
+- **mesa** (id_mesa, numero, capacidad, estado, forma, pos_x, pos_y)
 - **reserva** (id_reserva, id_usuario → usuario, id_mesa → mesa, fecha, hora, cantidad_personas, duracion_min, limpieza_min, estado)
 - **duracion_por_grupo** (hasta_personas, minutos) y **ajustes_reserva** (apertura, cierre, turnos, limpieza, máx. personas por turno)
 

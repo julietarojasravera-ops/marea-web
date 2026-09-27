@@ -21,7 +21,7 @@
 
   <main class="pagina">
     <div class="container">
-      <div class="tarjeta tarjeta-media">
+      <div class="tarjeta tarjeta-ancha">
         <h1 class="pagina-titulo mb-1">Reservá tu mesa</h1>
         <p class="pagina-bajada mb-4"><span id="saludo"></span> Elegí día, cuántos son y la hora.</p>
 
@@ -41,6 +41,21 @@
             </div>
           </div>
           <p class="info-tiempo" id="info-tiempo"></p>
+
+          <div class="plano-caja">
+            <div class="plano-cabecera">
+              <h2 class="plano-titulo">Elegí tu mesa <span class="plano-opcional">(opcional)</span></h2>
+              <p class="plano-ayuda" id="mesa-elegida-texto">Tocá una mesa libre, o dejá que te asignemos la mejor.</p>
+            </div>
+            <svg id="plano" class="plano" role="group" aria-label="Plano del local con las mesas"></svg>
+            <div class="plano-leyenda">
+              <span class="leyenda leyenda-libre">Libre</span>
+              <span class="leyenda leyenda-elegida">Tu mesa</span>
+              <span class="leyenda leyenda-ocupada">Ocupada</span>
+              <span class="leyenda leyenda-chica">No entra el grupo</span>
+            </div>
+          </div>
+
           <button type="submit" class="btn-marea oscuro mt-3">Ver disponibilidad</button>
 
           <div id="resultado" class="resultado oculto">
@@ -62,6 +77,7 @@
         </div>
 
         <div id="aviso-reserva" class="oculto" role="alert"></div>
+        <div id="alternativas" class="alternativas oculto"></div>
       </div>
     </div>
   </main>
@@ -69,6 +85,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="comun.js"></script>
+  <script src="plano.js"></script>
   <script src="reservar.js"></script>
 </body>
 </html>

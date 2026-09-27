@@ -496,3 +496,114 @@ a { color: var(--azul-ola); }
 .acciones-reserva .btn-borde { white-space: nowrap; }
 .subtitulo-tiempos { font-family: var(--fuente-texto); font-size: 1rem; font-weight: 600; color: var(--azul-marea); margin-bottom: 0.4rem; }
 .estado-sentada { background: #fff4d9; color: #7a5a12; }
+
+/* =========================================================
+   PLANO DEL LOCAL
+   ========================================================= */
+.tarjeta-ancha { max-width: 860px; margin: 0 auto; }
+
+.plano-caja {
+  margin-top: 1.4rem;
+  border: 1.5px solid #e7dfcf;
+  border-radius: var(--radio);
+  padding: 1.1rem 1.2rem 0.9rem;
+  background: #fffdf9;
+}
+.plano-cabecera { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.4rem; }
+.plano-titulo { font-size: 1.25rem; color: var(--azul-marea); margin: 0; }
+.plano-opcional { font-family: var(--fuente-texto); font-size: 0.85rem; color: var(--gris-suave); }
+.plano-ayuda { color: var(--azul-ola); font-size: 0.9rem; margin: 0; }
+
+.plano { width: 100%; height: auto; display: block; margin-top: 0.8rem; touch-action: none; }
+
+/* Sala */
+.plano-sala { fill: #f7f1e6; stroke: var(--azul-marea); stroke-width: 0.5; }
+.plano-ventanal { fill: #cfe3f2; stroke: var(--azul-ola); stroke-width: 0.3; }
+.plano-ola { fill: none; stroke: var(--azul-ola); stroke-width: 0.35; opacity: 0.6; }
+.plano-barra { fill: #8a6a48; }
+.plano-cocina { fill: #e9e4da; stroke: #cfc6b4; stroke-width: 0.3; stroke-dasharray: 1 0.8; }
+.plano-entrada { fill: var(--arena); }
+.plano-etiqueta { font-family: var(--fuente-texto); font-size: 2.1px; letter-spacing: 0.35px; fill: var(--gris-suave); font-weight: 600; }
+.plano-etiqueta-clara { fill: #f6efe2; }
+
+/* Mesas */
+.mesa-plano { cursor: pointer; outline: none; }
+.mesa-plano .tabla { stroke-width: 0.45; transition: fill 0.15s ease; }
+.mesa-plano .silla { stroke-width: 0.3; }
+.mesa-numero { font-family: var(--fuente-texto); font-size: 3px; font-weight: 700; pointer-events: none; }
+
+.mesa-libre .tabla { fill: #e3f1e8; stroke: var(--verde-alga); }
+.mesa-libre .silla { fill: #b9d9c4; stroke: var(--verde-alga); }
+.mesa-libre .mesa-numero { fill: #24513a; }
+.mesa-libre:hover .tabla, .mesa-libre:focus .tabla { fill: #c9e6d3; }
+
+.mesa-elegida .tabla { fill: var(--azul-marea); stroke: var(--azul-noche); }
+.mesa-elegida .silla { fill: var(--arena); stroke: var(--azul-marea); }
+.mesa-elegida .mesa-numero { fill: #fff; }
+
+.mesa-ocupada .tabla { fill: #d9d4cb; stroke: #a79f91; }
+.mesa-ocupada .silla { fill: #cdc6ba; stroke: #a79f91; }
+.mesa-ocupada .mesa-numero { fill: #7c7466; }
+
+.mesa-chica .tabla, .mesa-inactiva .tabla { fill: #fff; stroke: #cfc6b4; stroke-dasharray: 0.8 0.6; }
+.mesa-chica .silla, .mesa-inactiva .silla { fill: #fff; stroke: #cfc6b4; }
+.mesa-chica .mesa-numero, .mesa-inactiva .mesa-numero { fill: #b3a996; }
+
+.mesa-neutra .tabla { fill: #fff; stroke: var(--azul-marea); }
+.mesa-neutra .silla { fill: var(--arena); stroke: var(--azul-marea); }
+.mesa-neutra .mesa-numero { fill: var(--azul-marea); }
+
+.mesa-plano:focus-visible .tabla { stroke: var(--coral); stroke-width: 0.9; }
+
+/* Editor admin */
+.plano-editable .mesa-plano { cursor: grab; }
+.plano-editable .mesa-plano.arrastrando { cursor: grabbing; }
+.plano-editable .mesa-plano.arrastrando .tabla { stroke: var(--coral); stroke-width: 0.8; }
+
+/* Leyenda */
+.plano-leyenda { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.6rem; font-size: 0.85rem; color: var(--gris-suave); }
+.leyenda::before {
+  content: "";
+  display: inline-block;
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 4px;
+  margin-right: 0.35rem;
+  vertical-align: -2px;
+  border: 1.5px solid;
+}
+.leyenda-libre::before { background: #e3f1e8; border-color: var(--verde-alga); }
+.leyenda-elegida::before { background: var(--azul-marea); border-color: var(--azul-noche); }
+.leyenda-ocupada::before { background: #d9d4cb; border-color: #a79f91; }
+.leyenda-chica::before { background: #fff; border-color: #cfc6b4; border-style: dashed; }
+
+/* Horarios alternativos */
+.alternativas { margin-top: 1rem; padding: 1rem 1.1rem; border-radius: 14px; background: var(--arena-clara); }
+.alternativas-titulo { color: var(--azul-marea); font-weight: 600; margin-bottom: 0.6rem; }
+.alternativas-lista { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.chip-horario {
+  border: 1.5px solid var(--azul-marea);
+  background: #fff;
+  color: var(--azul-marea);
+  border-radius: 999px;
+  padding: 0.45rem 1rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.chip-horario:hover { background: var(--azul-marea); color: #fff; }
+
+@media (max-width: 576px) {
+  .plano-caja { padding: 0.8rem; }
+  .plano-leyenda { gap: 0.6rem; }
+}
+.campo-forma { max-width: 140px; }
+.plano-etiqueta-ventanal { font-size: 1.7px; fill: var(--azul-marea); }
+
+/* Plano en celular: se puede deslizar para que las mesas sean fáciles de tocar */
+@media (max-width: 576px) {
+  .plano-caja { overflow-x: auto; }
+  .plano { min-width: 540px; }
+  .nav-enlaces { gap: 0.7rem; }
+  .nav-enlaces a, .enlace-boton { font-size: 0.85rem; white-space: nowrap; }
+  .marca { letter-spacing: 0.18em; }
+}
