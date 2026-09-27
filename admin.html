@@ -35,6 +35,7 @@
           <button type="button" class="pestana" data-seccion="reservas">Reservas</button>
           <button type="button" class="pestana" data-seccion="mesas">Mesas</button>
           <button type="button" class="pestana" data-seccion="clientes">Clientes</button>
+          <button type="button" class="pestana" data-seccion="fidelizacion">Fidelización</button>
           <button type="button" class="pestana" data-seccion="equipo">Equipo</button>
         </div>
       </div>
@@ -247,6 +248,10 @@
                 <label class="form-label" for="r-comentarios">Comentarios</label>
                 <input class="form-control" type="text" id="r-comentarios" maxlength="300" placeholder="Alergias, silla de bebé…">
               </div>
+              <div class="col-md-3 oculto" id="grupo-gasto">
+                <label class="form-label" for="r-gasto">Total de la cuenta ($)</label>
+                <input class="form-control" type="number" id="r-gasto" min="0" max="10000000" step="1" placeholder="Ej: 5400">
+              </div>
             </div>
             <div class="d-flex gap-3 mt-4 flex-wrap">
               <button type="submit" class="btn-marea oscuro">Guardar</button>
@@ -389,6 +394,224 @@
           </table>
         </div>
       </section>
+      <!-- ================= FIDELIZACIÓN (PARTE B) ================= -->
+      <section id="sec-fidelizacion" class="seccion-admin oculto">
+        <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
+          <div>
+            <h2 class="grupo-titulo mt-0 mb-1">Segmentos de clientes</h2>
+            <p class="pagina-bajada mb-0">Se calculan solos con cuándo vino cada cliente por última vez, cuántas veces vino y cuánto gastó (modelo RFM).</p>
+          </div>
+          <button type="button" class="btn-borde" id="btn-recargar-fide">↻ Actualizar</button>
+        </div>
+        <div class="segmentos" id="tarjetas-segmentos"></div>
+
+        <div class="row g-4 mt-1">
+          <div class="col-lg-5">
+            <div class="tarjeta">
+              <h2 class="grupo-titulo mt-0">Canjear cupón</h2>
+              <p class="pagina-bajada">Cuando el cliente muestra su código, buscalo y marcalo como usado.</p>
+              <form id="form-cupon" class="d-flex gap-2 align-items-end">
+                <div class="flex-grow-1">
+                  <label class="form-label" for="cupon-codigo">Código</label>
+                  <input class="form-control campo-codigo" type="text" id="cupon-codigo" required
+                         maxlength="20" placeholder="MAREA-7F3A9C" autocomplete="off">
+                </div>
+                <button type="submit" class="btn-marea oscuro">Buscar</button>
+              </form>
+              <div id="resultado-cupon" class="resultado-cupon oculto"></div>
+              <p class="ayuda-campo mt-3 mb-0">Cada código sirve una sola vez y vence en la fecha que dice el cupón.</p>
+            </div>
+          </div>
+          <div class="col-lg-7">
+            <div class="tarjeta h-100">
+              <h2 class="grupo-titulo mt-0">Acciones automáticas</h2>
+              <p class="pagina-bajada">Se revisan todos los días a las 10:00. Solo reciben correo quienes aceptaron promociones.</p>
+              <div id="reglas-resumen"></div>
+              <div class="indicadores-cupon" id="indicadores-cupon"></div>
+              <p class="celda-secundaria mt-2 mb-3" id="ultima-ejecucion"></p>
+              <div class="d-flex gap-2 flex-wrap">
+                <button type="button" class="btn-marea oscuro" id="btn-ejecutar-fide">Ejecutar ahora</button>
+                <button type="button" class="btn-borde" id="btn-editar-reglas">Editar reglas</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-4 mt-1">
+          <div class="col-12">
+            <div class="tarjeta h-100">
+              <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-3">
+                <div>
+                  <h2 class="grupo-titulo mt-0 mb-1" id="titulo-lista-segmento">Todos los clientes</h2>
+                  <p class="pagina-bajada mb-0" id="bajada-lista-segmento">Tocá un segmento para filtrar.</p>
+                </div>
+                <div>
+                  <label class="form-label" for="buscar-fide">Buscar</label>
+                  <input class="form-control campo-buscar" type="search" id="buscar-fide" placeholder="Nombre o correo">
+                </div>
+              </div>
+              <div class="tabla-simple">
+                <table class="table tabla-marea align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Cliente</th>
+                      <th>Segmento</th>
+                      <th>Visitas</th>
+                      <th>Gasto 12 m</th>
+                      <th>Última visita</th>
+                      <th>Preferencias</th>
+                      <th>Cumpleaños</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tabla-fide"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Reglas -->
+        <form id="form-reglas" class="tarjeta mt-4 oculto">
+          <h2 class="grupo-titulo mt-0">Reglas de fidelización</h2>
+          <div class="row g-3">
+            <div class="col-12"><div class="subtitulo-tiempos">Segmentos</div></div>
+            <div class="col-6 col-md-3">
+              <label class="form-label" for="regla-frecuente">Frecuente desde (visitas al año)</label>
+              <input class="form-control" type="number" id="regla-frecuente" min="2" max="50" required>
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label" for="regla-vip-visitas">VIP desde (visitas al año)</label>
+              <input class="form-control" type="number" id="regla-vip-visitas" min="3" max="100" required>
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label" for="regla-vip-gasto">o VIP desde (gasto al año, $)</label>
+              <input class="form-control" type="number" id="regla-vip-gasto" min="1000" step="500" required>
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label" for="regla-riesgo">En riesgo (días sin venir)</label>
+              <input class="form-control" type="number" id="regla-riesgo" min="15" max="365" required>
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label" for="regla-inactivo">Inactivo (días sin venir)</label>
+              <input class="form-control" type="number" id="regla-inactivo" min="30" max="730" required>
+            </div>
+            <div class="col-12"><div class="subtitulo-tiempos mt-2">Beneficios automáticos</div></div>
+            <div class="col-md-6">
+              <label class="form-label" for="regla-ben-cumple">🎂 Regalo de cumpleaños</label>
+              <input class="form-control" type="text" id="regla-ben-cumple" minlength="3" maxlength="120" required>
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label" for="regla-aviso-cumple">Se manda (días antes)</label>
+              <input class="form-control" type="number" id="regla-aviso-cumple" min="0" max="30" required>
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label" for="regla-vigencia">Los cupones valen (días)</label>
+              <input class="form-control" type="number" id="regla-vigencia" min="7" max="180" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="regla-ben-react">🌊 Beneficio de reactivación</label>
+              <input class="form-control" type="text" id="regla-ben-react" minlength="3" maxlength="120" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="regla-ben-gasto">🍷 Beneficio por gasto</label>
+              <input class="form-control" type="text" id="regla-ben-gasto" minlength="3" maxlength="120" required>
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label" for="regla-meta">Cada cuánto gasto ($)</label>
+              <input class="form-control" type="number" id="regla-meta" min="1000" step="500" required>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+              <div class="form-check consentimiento">
+                <input class="form-check-input" type="checkbox" id="regla-automatico">
+                <label class="form-check-label" for="regla-automatico">Enviar las acciones automáticas todos los días</label>
+              </div>
+            </div>
+          </div>
+          <div class="d-flex gap-3 mt-4 flex-wrap">
+            <button type="submit" class="btn-marea oscuro">Guardar reglas</button>
+            <button type="button" class="btn-borde" id="btn-cerrar-reglas">Cancelar</button>
+          </div>
+        </form>
+
+        <div class="row g-4 mt-1">
+          <div class="col-lg-6">
+            <form id="form-campana" class="tarjeta h-100">
+              <h2 class="grupo-titulo mt-0">Nueva promoción</h2>
+              <p class="pagina-bajada">Elegí a quién va según su segmento y sus preferencias. Solo llega a quienes aceptaron promociones.</p>
+              <div class="row g-3">
+                <div class="col-12">
+                  <label class="form-label" for="camp-nombre">Nombre interno</label>
+                  <input class="form-control" type="text" id="camp-nombre" required minlength="3" maxlength="80" placeholder="Ej: Noche de ostras para parejas">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label" for="camp-segmento">Segmento</label>
+                  <select class="form-select" id="camp-segmento">
+                    <option value="">Todos</option>
+                    <option value="nuevo">Nuevos</option>
+                    <option value="frecuente">Frecuentes</option>
+                    <option value="vip">VIP</option>
+                    <option value="en_riesgo">En riesgo</option>
+                    <option value="inactivo">Inactivos</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label" for="camp-zona">Zona favorita</label>
+                  <select class="form-select" id="camp-zona">
+                    <option value="">Cualquiera</option>
+                    <option value="Ventanal">Ventanal</option>
+                    <option value="Salón">Salón</option>
+                    <option value="Barra">Barra</option>
+                    <option value="Fondo">Fondo</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label" for="camp-grupo">Suelen venir</label>
+                  <select class="form-select" id="camp-grupo">
+                    <option value="">De cualquier forma</option>
+                    <option value="pareja">De a uno o dos</option>
+                    <option value="grupo">En grupo (4 o más)</option>
+                  </select>
+                </div>
+                <div class="col-12">
+                  <p class="alcance" id="camp-alcance">Calculando a cuántos llega…</p>
+                </div>
+                <div class="col-12">
+                  <label class="form-label" for="camp-asunto">Asunto del correo</label>
+                  <input class="form-control" type="text" id="camp-asunto" required minlength="3" maxlength="120" placeholder="Ej: Este viernes, ostras frescas frente al mar">
+                </div>
+                <div class="col-12">
+                  <label class="form-label" for="camp-mensaje">Mensaje</label>
+                  <textarea class="form-control" id="camp-mensaje" rows="3" required minlength="3" maxlength="1000"></textarea>
+                </div>
+                <div class="col-md-8">
+                  <label class="form-label" for="camp-beneficio">Cupón <span class="plano-opcional">(opcional)</span></label>
+                  <input class="form-control" type="text" id="camp-beneficio" maxlength="120" placeholder="Ej: Copa de espumante de bienvenida">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label" for="camp-vigencia">Vale (días)</label>
+                  <input class="form-control" type="number" id="camp-vigencia" min="1" max="180" value="30" required>
+                </div>
+              </div>
+              <button type="submit" class="btn-marea oscuro mt-4">Enviar promoción</button>
+            </form>
+          </div>
+          <div class="col-lg-6">
+            <div class="tarjeta h-100">
+              <h2 class="grupo-titulo mt-0">Promociones enviadas</h2>
+              <div id="lista-campanas"></div>
+              <h3 class="subtitulo-tiempos mt-4">Últimos beneficios</h3>
+              <div class="tabla-simple">
+                <table class="table tabla-marea align-middle mb-0">
+                  <thead><tr><th>Cliente</th><th>Beneficio</th><th>Código</th><th>Estado</th></tr></thead>
+                  <tbody id="tabla-beneficios"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- ================= EQUIPO ================= -->
       <section id="sec-equipo" class="seccion-admin oculto">
         <div class="row g-4">
@@ -433,6 +656,20 @@
     </div>
   </main>
 
+  <!-- Ventana para anotar el total de la cuenta -->
+  <dialog id="dialogo-gasto" class="dialogo-marea" aria-labelledby="gasto-titulo">
+    <form id="form-gasto" method="dialog">
+      <h2 class="grupo-titulo mt-0" id="gasto-titulo">Liberar la mesa</h2>
+      <label class="form-label" for="gasto-monto">Total de la cuenta ($)</label>
+      <input class="form-control" type="number" id="gasto-monto" min="0" max="10000000" step="1" placeholder="Ej: 5400" inputmode="numeric">
+      <p class="ayuda-campo" id="gasto-ayuda"></p>
+      <div class="d-flex gap-2 mt-3 flex-wrap">
+        <button type="submit" class="btn-marea oscuro" id="gasto-confirmar">Liberar mesa</button>
+        <button type="button" class="btn-borde" id="gasto-volver">Volver</button>
+      </div>
+    </form>
+  </dialog>
+
   <footer class="pie-marea pie-simple">
     <div class="container">
       <div class="pie-final">
@@ -449,5 +686,6 @@
   <script src="admin.js"></script>
   <script src="admin-salon.js"></script>
   <script src="admin-equipo.js"></script>
+  <script src="admin-fidelizacion.js"></script>
 </body>
 </html>

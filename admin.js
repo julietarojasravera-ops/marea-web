@@ -9,13 +9,6 @@ let mesas = [];     // se cargan una vez y se refrescan al editar
 let clientes = [];  // para el formulario de nueva reserva
 let editandoId = null;
 
-// Evita que un nombre con símbolos rompa la tabla
-function esc(texto) {
-  return String(texto ?? "").replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  }[c]));
-}
-
 // Minutos de apertura y cierre (si cierra a las 00:00, es 24:00)
 function rangoServicio() {
   const a = reglasTiempo.ajustes;
@@ -61,6 +54,7 @@ document.querySelectorAll("[data-seccion]").forEach((boton) => {
     if (boton.dataset.seccion === "mesas") { pintarMesas(); pintarTiempos(); }
     if (boton.dataset.seccion === "clientes") cargarClientesTabla();
     if (boton.dataset.seccion === "equipo") cargarEquipo();
+    if (boton.dataset.seccion === "fidelizacion") cargarFidelizacion();
   });
 });
 
@@ -102,7 +96,7 @@ document.getElementById("btn-actualizar").addEventListener("click", () => { carg
 async function cargarDashboard() {
   const { data, error } = await db
     .from("reserva")
-    .select("id_reserva, id_usuario, id_mesa, fecha, hora, cantidad_personas, estado, duracion_min, limpieza_min, ocasion, comentarios, usuario(nombre, email, telefono), mesa(numero, zona)")
+    .select("id_reserva, id_usuario, id_mesa, fecha, hora, cantidad_personas, estado, duracion_min, limpieza_min, ocasion, comentarios, gasto, usuario(nombre, email, telefono), mesa(numero, zona)")
     .eq("fecha", dashFecha.value)
     .order("hora");
   if (error) { avisoAdmin("error", mensajeDeError(error)); return; }
@@ -260,12 +254,12 @@ document.getElementById("btn-exportar").addEventListener("click", () => {
   const filas = reservasFiltradas();
   if (!filas.length) { avisoAdmin("info", "No hay reservas para exportar con esos filtros."); return; }
   const columnas = ["Reserva", "Fecha", "Desde", "Hasta", "Personas", "Mesa", "Zona", "Cliente", "Correo",
-    "Teléfono", "Estado", "Ocasión", "Comentarios"];
+    "Teléfono", "Estado", "Ocasión", "Comentarios", "Total de la cuenta"];
   const celda = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const lineas = filas.map((r) => [
     r.id_reserva, r.fecha, formatearHora(r.hora), sumarMinutos(formatearHora(r.hora), r.duracion_min),
     r.cantidad_personas, r.mesa?.numero, r.mesa?.zona, r.usuario?.nombre, r.usuario?.email,
-    r.usuario?.telefono, NOMBRES_ESTADO[r.estado] || r.estado, r.ocasion, r.comentarios,
+    r.usuario?.telefono, NOMBRES_ESTADO[r.estado] || r.estado, r.ocasion, r.comentarios, r.gasto,
   ].map(celda).join(";"));
   const csv = "\uFEFF" + [columnas.map(celda).join(";"), ...lineas].join("\r\n");
   const enlace = document.createElement("a");
@@ -281,7 +275,7 @@ let reservasCargadas = [];
 async function cargarReservas() {
   let consulta = db
     .from("reserva")
-    .select("id_reserva, id_usuario, id_mesa, fecha, hora, cantidad_personas, estado, duracion_min, ocasion, comentarios, usuario(nombre, email, telefono), mesa(numero, zona)")
+    .select("id_reserva, id_usuario, id_mesa, fecha, hora, cantidad_personas, estado, duracion_min, ocasion, comentarios, gasto, usuario(nombre, email, telefono), mesa(numero, zona)")
     .order("fecha", { ascending: true })
     .order("hora", { ascending: true });
   if (filtroFecha.value) consulta = consulta.eq("fecha", filtroFecha.value);
@@ -327,7 +321,8 @@ function pintarReservas() {
       <td class="celda-notas">
         ${r.ocasion ? `<div class="nota-ocasion">${NOMBRES_OCASION[r.ocasion] || esc(r.ocasion)}</div>` : ""}
         ${r.comentarios ? `<div class="celda-secundaria">${esc(r.comentarios)}</div>` : ""}
-        ${!r.ocasion && !r.comentarios ? `<span class="texto-suave">–</span>` : ""}
+        ${r.gasto != null ? `<div class="nota-gasto">Cuenta: ${formatearPesos(r.gasto)}</div>` : ""}
+        ${!r.ocasion && !r.comentarios && r.gasto == null ? `<span class="texto-suave">–</span>` : ""}
       </td>
       <td>
         <select class="form-select form-select-sm selector-estado estado-${r.estado}" data-estado="${r.id_reserva}">
@@ -363,9 +358,16 @@ async function accionReserva(id, accion) {
   if (accion === "sentar") {
     resultado = await db.from("reserva").update({ estado: "sentada" }).eq("id_reserva", id);
     texto = `Reserva n.º ${id}: el grupo ya está en la mesa.`;
-  } else if (accion === "liberar") {
-    resultado = await db.from("reserva").update({ estado: "completada" }).eq("id_reserva", id);
-    texto = `Reserva n.º ${id}: mesa liberada. Ya se puede volver a reservar.`;
+  } else if (accion === "liberar" || accion === "gasto") {
+    const gasto = await pedirGasto(id, accion === "liberar");
+    if (gasto === undefined) return false;   // tocó "Volver"
+    const cambios = accion === "liberar" ? { estado: "completada" } : {};
+    if (gasto !== null) cambios.gasto = gasto;
+    if (!Object.keys(cambios).length) return false;
+    resultado = await db.from("reserva").update(cambios).eq("id_reserva", id);
+    texto = accion === "liberar"
+      ? `Reserva n.º ${id}: mesa liberada${gasto !== null ? ` · cuenta de ${formatearPesos(gasto)}` : ""}. Ya se puede volver a reservar.`
+      : `Reserva n.º ${id}: se anotó la cuenta de ${formatearPesos(gasto)}.`;
   } else if (accion === "noshow") {
     resultado = await db.from("reserva").update({ estado: "no_asistio" }).eq("id_reserva", id);
     texto = `Reserva n.º ${id}: marcada como "no vino". La mesa quedó libre.`;
@@ -378,10 +380,50 @@ async function accionReserva(id, accion) {
   return true;
 }
 
+// Ventana para anotar el total de la cuenta (Parte B: gasto por visita)
+function pedirGasto(id, liberando) {
+  const dialogo = document.getElementById("dialogo-gasto");
+  const campo = document.getElementById("gasto-monto");
+  document.getElementById("gasto-titulo").textContent =
+    liberando ? `Liberar la mesa · reserva n.º ${id}` : `Anotar la cuenta · reserva n.º ${id}`;
+  document.getElementById("gasto-confirmar").textContent = liberando ? "Liberar mesa" : "Guardar";
+  document.getElementById("gasto-ayuda").textContent = liberando
+    ? "Si todavía no tenés el total, dejalo vacío y lo anotás después."
+    : "El total suma para la segmentación y la meta de regalo del cliente.";
+  campo.value = "";
+  campo.required = !liberando;
+  return new Promise((resolver) => {
+    const cerrar = (valor) => {
+      dialogo.removeEventListener("close", alCerrar);
+      document.getElementById("form-gasto").removeEventListener("submit", alEnviar);
+      if (dialogo.open) dialogo.close();
+      resolver(valor);
+    };
+    const alCerrar = () => cerrar(undefined);
+    const alEnviar = (e) => {
+      e.preventDefault();
+      const texto = campo.value.trim();
+      if (texto === "") { cerrar(liberando ? null : undefined); return; }
+      const monto = Math.round(Number(texto));
+      if (!Number.isFinite(monto) || monto < 0 || monto > 10000000) { campo.focus(); return; }
+      cerrar(monto);
+    };
+    dialogo.addEventListener("close", alCerrar);
+    document.getElementById("form-gasto").addEventListener("submit", alEnviar);
+    dialogo.showModal();
+    campo.focus();
+  });
+}
+
+document.getElementById("gasto-volver").addEventListener("click", () => {
+  document.getElementById("dialogo-gasto").close();
+});
+
 function botonesAccion(r) {
   return `
     ${r.estado === "confirmada" ? `<button type="button" class="btn-borde" data-accion="sentar" data-id="${r.id_reserva}">Sentar</button>` : ""}
     ${r.estado === "sentada" ? `<button type="button" class="btn-borde" data-accion="liberar" data-id="${r.id_reserva}">Liberar mesa</button>` : ""}
+    ${r.estado === "completada" && r.gasto == null ? `<button type="button" class="btn-borde" data-accion="gasto" data-id="${r.id_reserva}" title="Anotar el total de la cuenta">Anotar cuenta</button>` : ""}
     ${["confirmada", "sentada"].includes(r.estado) ? `<button type="button" class="btn-borde" data-accion="extender" data-id="${r.id_reserva}" title="Se quedan más tiempo">+15 min</button>` : ""}
     ${r.estado === "confirmada" ? `<button type="button" class="btn-borde btn-peligro" data-accion="noshow" data-id="${r.id_reserva}" title="No se presentaron">No vino</button>` : ""}`;
 }
@@ -433,6 +475,9 @@ function abrirPanel(reserva = null) {
   document.getElementById("r-mesa").value = reserva ? reserva.id_mesa : "";
   document.getElementById("r-ocasion").value = reserva?.ocasion || "";
   document.getElementById("r-comentarios").value = reserva?.comentarios || "";
+  const conCuenta = !!reserva && ["sentada", "completada"].includes(reserva.estado);
+  document.getElementById("grupo-gasto").classList.toggle("oculto", !conCuenta);
+  document.getElementById("r-gasto").value = conCuenta && reserva.gasto != null ? reserva.gasto : "";
 
   panel.classList.remove("oculto");
   ocultarAviso("aviso-admin");
@@ -477,6 +522,10 @@ formReserva.addEventListener("submit", async (e) => {
     ocasion: document.getElementById("r-ocasion").value || null,
     comentarios: document.getElementById("r-comentarios").value.trim() || null,
   };
+  if (!document.getElementById("grupo-gasto").classList.contains("oculto")) {
+    const texto = document.getElementById("r-gasto").value.trim();
+    datos.gasto = texto === "" ? null : Math.round(Number(texto));
+  }
   let resultado;
   if (editandoId) {
     resultado = await db.from("reserva").update(datos).eq("id_reserva", editandoId);

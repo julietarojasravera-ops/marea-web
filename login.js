@@ -110,6 +110,13 @@ formRegistro.addEventListener("submit", async (e) => {
     return;
   }
 
+  const nacimiento = document.getElementById("registro-nacimiento").value;
+  if (nacimiento && (nacimiento > hoyISO() || nacimiento < "1900-01-01")) {
+    mostrarAviso("aviso-login", "error", "Revisá la fecha de cumpleaños.");
+    boton.disabled = false;
+    return;
+  }
+
   const { data, error } = await db.auth.signUp({
     email: document.getElementById("registro-email").value.trim(),
     password: clave,
@@ -118,6 +125,8 @@ formRegistro.addEventListener("submit", async (e) => {
         nombre: document.getElementById("registro-nombre").value.trim(),
         telefono,
         acepta_privacidad: "si",
+        fecha_nacimiento: nacimiento || null,
+        acepta_promociones: document.getElementById("registro-promociones").checked ? "si" : "no",
       },
     },
   });
@@ -148,3 +157,6 @@ formRegistro.addEventListener("submit", async (e) => {
   if (params.get("modo") === "registro") mostrarPestana("registro");
   if (params.get("modo") === "recuperar") mostrarPestana("recuperar");
 })();
+
+// El cumpleaños no puede ser una fecha futura
+document.getElementById("registro-nacimiento").max = hoyISO();

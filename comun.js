@@ -70,6 +70,18 @@ async function pintarMenu() {
   document.getElementById("btn-salir").addEventListener("click", cerrarSesion);
 }
 
+// Evita que un nombre con símbolos rompa la página (anti-XSS)
+function esc(texto) {
+  return String(texto ?? "").replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[c]));
+}
+
+// Pesos uruguayos: $ 12.500
+function formatearPesos(n) {
+  return "$ " + Math.round(Number(n || 0)).toLocaleString("es-UY");
+}
+
 // ---------- Avisos ----------
 function mostrarAviso(idCaja, tipo, texto) {
   const caja = document.getElementById(idCaja);

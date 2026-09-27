@@ -13,7 +13,7 @@ Proyecto académico — Incorporación Estratégica · Universidad ORT Uruguay.
 | Etapa | Estado |
 |---|---|
 | **Parte A — MVP** | ✅ Completa y funcionando |
-| Parte B — Fidelización basada en datos | ⏳ Próxima etapa |
+| Parte B — Segmentación y fidelización | ✅ Completa y funcionando |
 
 ## Qué hace (Parte A)
 
@@ -37,6 +37,44 @@ Proyecto académico — Incorporación Estratégica · Universidad ORT Uruguay.
 - **Clientes:** listado con teléfono, reservas, asistencias, cancelaciones, última visita y próxima reserva.
 - **Equipo:** administradores por **invitación segura**, invitaciones pendientes (revocables) y registro de cambios de rol.
 - **Alerta de ocupación:** aviso en el panel y por correo cuando un horario llega al 80 %.
+
+## Qué hace (Parte B — fidelización)
+
+La Parte B no agrega infraestructura: usa los mismos datos de Supabase, suma un paso de **segmentación** y reutiliza el webhook de Make.
+
+```
+Datos almacenados en Supabase ──► Segmentación de clientes ──► Make ──► Acciones de fidelización
+(visitas, gasto, cumpleaños,       (RFM: recencia, frecuencia,           (cumpleaños, reactivación,
+ preferencias, permiso)              monto)                               gasto, promociones)
+```
+
+**Datos nuevos**
+- El admin anota el **total de la cuenta** al liberar la mesa (o después, con "Anotar cuenta").
+- El cliente puede dar su **fecha de cumpleaños** (opcional) y elegir si **acepta recibir promociones** (Ley 18.331). Lo cambia cuando quiere desde *Mis reservas → Mis datos*.
+- Las preferencias se calculan solas: zona favorita, día y horario habitual, tamaño del grupo y ocasiones.
+
+**Segmentos (modelo RFM, reglas editables desde el panel)**
+
+| Segmento | Regla inicial |
+|---|---|
+| VIP | 6+ visitas o $ 40.000+ de gasto en el último año |
+| Frecuente | 3+ visitas en el último año |
+| Nuevo | 0 a 2 visitas |
+| En riesgo | 60+ días sin venir y sin reserva próxima |
+| Inactivo | 150+ días sin venir y sin reserva próxima |
+
+**Acciones de fidelización** (cupón con código único `MAREA-XXXXXX`, vence y se usa una sola vez)
+
+| Acción | Cuándo | Beneficio inicial |
+|---|---|---|
+| 🎂 Cumpleaños | 7 días antes, una vez por año | Postre de regalo para toda la mesa |
+| 🌊 Reactivación | al pasar a En riesgo o Inactivo, una vez por ausencia | 15 % de descuento en la próxima cena |
+| 🍷 Beneficio por gasto | cada $ 20.000 de gasto acumulado | Una botella de vino de la casa |
+| ✨ Promoción | el admin la lanza filtrando por segmento, zona favorita y si vienen en pareja o en grupo | cupón opcional |
+
+- Cumpleaños y reactivación se revisan **todos los días a las 10:00** (Supabase Cron). El beneficio por gasto se entrega **en el momento** en que se anota la cuenta.
+- El cliente ve sus cupones y cuánto le falta para el próximo regalo en **Mis beneficios**.
+- En el panel, la pestaña **Fidelización** muestra los segmentos, la lista de clientes con sus preferencias y su cumpleaños, el **canje de cupones**, las reglas, el botón *Ejecutar ahora*, las promociones enviadas y cuántos cupones se usaron.
 
 ## Tiempos de mesa (como los sistemas profesionales)
 
@@ -102,6 +140,7 @@ Navegador ──► Vercel (sitio) ──► Supabase (Auth + API + PostgreSQL)
 | `admin.html` / `admin.js` | Panel: Dashboard, Reservas, Mesas, Clientes |
 | `admin-salon.js` | Salón en vivo, línea de tiempo y próximas llegadas del panel |
 | `admin-equipo.js` | Pestaña Equipo: administradores, invitaciones y auditoría |
+| `admin-fidelizacion.js` | Pestaña Fidelización (Parte B): segmentos, canje de cupones, reglas y promociones |
 | `invitacion.html` / `invitacion.js` | Aceptar una invitación para ser administrador |
 | `comun.js` | Funciones compartidas (sesión, roles, mensajes, tiempos de mesa) |
 | `plano.js` | Dibuja el plano del local (elegir mesa y editor del admin) |
@@ -119,6 +158,9 @@ Navegador ──► Vercel (sitio) ──► Supabase (Auth + API + PostgreSQL)
 | `sql-6-plano-y-alternativas.sql` | Forma y ubicación de las mesas, estado de cada mesa, elegir mesa y horarios alternativos |
 | `sql-7-profesional.sql` | 20 mesas con zonas, mesa justa por grupo, ocasión y comentarios, teléfono del cliente |
 | `sql-8-invitaciones-admin.sql` | Invitaciones de administradores (enlace único, cifrado, 48 h) y auditoría de roles |
+| `sql-9-fidelizacion.sql` | **Parte B:** gasto, cumpleaños, permiso de promociones, segmentación RFM, cupones, promociones, correos y tarea diaria |
+| `sql-10-datos-demo-fidelizacion.sql` | Opcional: 13 clientes de prueba con historial, para mostrar los segmentos en la demo |
+| `diagramas/` | Arquitectura, flujo de usuario y MER (Parte A) · flujo y MER de la Parte B |
 
 Los SQL se corren en ese orden en el SQL Editor de Supabase. Las cuentas de administradores se crean con un script aparte que **no** está en el repositorio (tiene contraseñas). La dirección del webhook de Make
 y el correo del administrador se configuran aparte en la tabla `config_app` (no están en el repositorio).
@@ -131,7 +173,17 @@ y el correo del administrador se configuran aparte en la tabla `config_app` (no 
 - **duracion_por_grupo** (hasta_personas, minutos) y **ajustes_reserva** (apertura, cierre, turnos, limpieza, máx. personas por turno)
 
 Relaciones: USUARIO 1 — N RESERVA · MESA 1 — N RESERVA.
-`fecha_nacimiento` queda preparada para la Parte B.
+
+## Modelo de datos (Parte B)
+
+- **usuario** suma `acepta_promociones` y `fecha_acepta_promociones` (usa `fecha_nacimiento`)
+- **reserva** suma `gasto` (total de la cuenta)
+- **beneficio** (id_beneficio, codigo único, id_usuario → usuario, tipo, descripcion, periodo, id_campana → campana, vence_en, usado_en, usado_por → usuario, correo_enviado)
+- **campana** (id_campana, nombre, segmento, zona, grupo, asunto, mensaje, beneficio, vence_en, destinatarios, creada_por → usuario)
+- **ajustes_fidelizacion** (reglas de segmentos y beneficios, una sola fila)
+- La **segmentación no se guarda**: la calcula la función `datos_clientes()`, así siempre está al día.
+
+Relaciones: USUARIO 1 — N BENEFICIO · CAMPANA 1 — N BENEFICIO.
 
 ## Seguridad
 
@@ -154,5 +206,8 @@ Relaciones: USUARIO 1 — N RESERVA · MESA 1 — N RESERVA.
 | Admins solo por invitación: enlace único, cifrado (hash), 48 h, un uso, atado al correo | Que alguien se haga administrador sin permiso |
 | Auditoría de roles (trigger) · no se puede quitar el propio rol ni el último admin | Cambios de permisos sin rastro o dejar el sistema sin dueño |
 | Redirección después del login solo a páginas del propio sitio | Enlaces que mandan a sitios falsos (open redirect) |
+| Correos de promociones solo con permiso explícito (opt-in) y enlace para darse de baja | Ley 18.331 y correo no deseado |
+| Cupones únicos, con vencimiento, de un solo uso, y solo un admin los canjea | Que un cupón se use dos veces o se invente |
+| Funciones de fidelización internas sin permiso externo · texto de promociones escapado | Cupones o correos creados desde afuera, inyección de HTML |
 
 **Mejoras futuras:** auditoría de cambios en reservas y verificación en dos pasos (MFA) para los administradores.

@@ -77,6 +77,95 @@ document.getElementById("lista-proximas").addEventListener("click", async (e) =>
   cargarReservas();
 });
 
+
+// ---------- Beneficios (Parte B) ----------
+const NOMBRES_BENEFICIO = {
+  cumpleanos: "🎂 Regalo de cumpleaños",
+  reactivacion: "🌊 Te extrañamos",
+  gasto: "🍷 Gracias por elegirnos",
+  campana: "✨ Promoción",
+};
+
+function estadoBeneficio(b) {
+  if (b.usado_en) return { texto: "Usado", clase: "estado-completada" };
+  if (b.vence_en < hoyISO()) return { texto: "Vencido", clase: "estado-no_asistio" };
+  return { texto: "Vigente", clase: "estado-confirmada" };
+}
+
+async function cargarBeneficios() {
+  const [lista, resumen] = await Promise.all([
+    db.from("beneficio").select("codigo, tipo, descripcion, vence_en, usado_en")
+      .eq("id_usuario", idUsuario).order("creado_en", { ascending: false }).limit(12),
+    db.rpc("mi_fidelizacion"),
+  ]);
+  if (lista.error) return;   // si la Parte B todavía no está instalada, no mostramos nada
+  document.getElementById("caja-beneficios").classList.remove("oculto");
+
+  const vigentes = lista.data.filter((b) => estadoBeneficio(b).texto === "Vigente");
+  const otros = lista.data.filter((b) => estadoBeneficio(b).texto !== "Vigente").slice(0, 4);
+  const caja = document.getElementById("lista-beneficios");
+  if (!lista.data.length) {
+    caja.innerHTML = '<div class="vacio">Todavía no tenés beneficios. ¡Llegan con tu cumpleaños y a medida que nos visitás!</div>';
+  } else {
+    caja.innerHTML = [...vigentes, ...otros].map((b) => {
+      const e = estadoBeneficio(b);
+      return `
+        <div class="cupon ${e.texto === "Vigente" ? "" : "cupon-apagado"}">
+          <div class="cupon-cuerpo">
+            <div class="cupon-tipo">${NOMBRES_BENEFICIO[b.tipo] || "Beneficio"}</div>
+            <div class="cupon-descripcion">${esc(b.descripcion)}</div>
+            <div class="cupon-vence">${e.texto === "Vigente" ? `Válido hasta el ${formatearFecha(b.vence_en)}` : e.texto}</div>
+          </div>
+          <div class="cupon-codigo">
+            <span class="cupon-codigo-texto">${esc(b.codigo)}</span>
+            <span class="estado ${e.clase}">${e.texto}</span>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  const r = resumen.data;
+  const progreso = document.getElementById("progreso-regalo");
+  if (!r || resumen.error) { progreso.classList.add("oculto"); return; }
+  const avance = r.meta_gasto - r.falta;
+  document.getElementById("progreso-texto").textContent =
+    `Te faltan ${formatearPesos(r.falta)} en consumos para tu próximo regalo: ${r.beneficio_gasto.toLowerCase()}.`;
+  document.getElementById("progreso-cifra").textContent =
+    `${formatearPesos(avance)} de ${formatearPesos(r.meta_gasto)}`;
+  const barra = document.getElementById("progreso-barra");
+  barra.max = r.meta_gasto;
+  barra.value = avance;
+}
+
+// ---------- Mis datos ----------
+async function cargarMisDatos() {
+  const { data, error } = await db.from("usuario")
+    .select("fecha_nacimiento, acepta_promociones").eq("id_usuario", idUsuario).single();
+  if (error) { document.getElementById("form-datos").classList.add("oculto"); return; }
+  document.getElementById("dato-nacimiento").value = data.fecha_nacimiento || "";
+  document.getElementById("dato-promociones").checked = !!data.acepta_promociones;
+}
+
+document.getElementById("dato-nacimiento").max = hoyISO();
+document.getElementById("form-datos").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const boton = e.target.querySelector("button[type=submit]");
+  const nacimiento = document.getElementById("dato-nacimiento").value || null;
+  if (nacimiento && (nacimiento > hoyISO() || nacimiento < "1900-01-01")) {
+    mostrarAviso("aviso-mis", "error", "Revisá la fecha de cumpleaños.");
+    return;
+  }
+  boton.disabled = true;
+  const { error } = await db.from("usuario").update({
+    fecha_nacimiento: nacimiento,
+    acepta_promociones: document.getElementById("dato-promociones").checked,
+  }).eq("id_usuario", idUsuario);
+  boton.disabled = false;
+  if (error) { mostrarAviso("aviso-mis", "error", mensajeDeError(error)); return; }
+  mostrarAviso("aviso-mis", "ok", "Guardamos tus datos.");
+  cargarBeneficios();
+});
+
 (async () => {
   const acceso = await requerirSesion();
   if (!acceso) return;
@@ -84,4 +173,6 @@ document.getElementById("lista-proximas").addEventListener("click", async (e) =>
   const nombre = acceso.perfil && acceso.perfil.nombre;
   if (nombre) document.getElementById("saludo").textContent = `Hola, ${nombre}. Estas son tus reservas.`;
   cargarReservas();
+  cargarBeneficios();
+  cargarMisDatos();
 })();

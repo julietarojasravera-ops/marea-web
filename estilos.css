@@ -1101,3 +1101,148 @@ a { color: var(--azul-ola); }
   .nav-enlaces a, .enlace-boton { font-size: 0.8rem; letter-spacing: 0; }
   .nav-enlaces a[href="reservar.html"] { padding: 0.3rem 0.65rem; }
 }
+
+/* =========================================================
+   PARTE B — FIDELIZACIÓN
+   ========================================================= */
+.pestanas-admin { min-width: 640px; }
+@media (max-width: 767px) { .pestanas-admin { min-width: 100%; flex-wrap: wrap; } }
+
+/* Colores de cada segmento */
+.segmento {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.segmento-vip { background: #f4ead8; color: #7a5a24; }
+.segmento-frecuente { background: #e6f2eb; color: #24513a; }
+.segmento-nuevo { background: #e8eef5; color: var(--azul-marea); }
+.segmento-en_riesgo { background: #fdeee2; color: #9a4a1c; }
+.segmento-inactivo { background: #eeebe6; color: #6b6458; }
+
+.segmentos {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1rem;
+}
+.tarjeta-segmento {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 0.15rem;
+  background: var(--espuma);
+  border: 1.5px solid transparent;
+  border-top: 3px solid var(--arena);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  padding: 1.1rem 1.2rem 1.2rem;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.tarjeta-segmento:hover { transform: translateY(-3px); }
+.tarjeta-segmento.activa { border-color: var(--azul-marea); }
+.segmento-borde-vip { border-top-color: var(--dorado); }
+.segmento-borde-frecuente { border-top-color: var(--verde-alga); }
+.segmento-borde-nuevo { border-top-color: var(--azul-ola); }
+.segmento-borde-en_riesgo { border-top-color: #d07a3c; }
+.segmento-borde-inactivo { border-top-color: #a79f91; }
+.segmento-icono {
+  width: 2rem; height: 2rem; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; padding: 0; margin-bottom: 0.4rem;
+}
+.segmento-cifra { font-family: var(--fuente-titulo); font-size: 2.3rem; line-height: 1; color: var(--azul-marea); }
+.segmento-nombre { font-weight: 600; color: var(--azul-marea); }
+.segmento-pct { font-size: 0.8rem; color: var(--dorado); font-weight: 600; }
+.segmento-texto { font-size: 0.82rem; color: var(--gris-suave); line-height: 1.4; margin-top: 0.3rem; }
+@media (max-width: 1199px) { .segmentos { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 576px) { .segmentos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.cumple-pronto { color: var(--coral); font-weight: 600; }
+.celda-codigo { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 0.85rem; white-space: nowrap; }
+.nota-gasto { font-size: 0.82rem; color: var(--verde-alga); font-weight: 600; margin-top: 0.2rem; }
+
+/* Acciones automáticas */
+.regla { display: flex; gap: 0.7rem; align-items: flex-start; padding: 0.55rem 0; border-top: 1px solid #efe8da; font-size: 0.92rem; }
+.regla:first-child { border-top: 0; }
+.regla-icono { font-size: 1.2rem; line-height: 1.2; }
+.indicadores-cupon {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+  padding: 0.8rem;
+  background: var(--arena-clara);
+  border-radius: 12px;
+  text-align: center;
+}
+.indicador-cifra { display: block; font-family: var(--fuente-titulo); font-size: 1.6rem; color: var(--azul-marea); line-height: 1.1; }
+.indicador-nombre { font-size: 0.72rem; color: var(--gris-suave); }
+
+/* Canje */
+.campo-codigo { text-transform: uppercase; letter-spacing: 0.08em; font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; }
+.resultado-cupon { margin-top: 1rem; padding: 1rem; border: 1.5px dashed var(--dorado); border-radius: 12px; background: var(--crema); }
+.alcance { margin: 0; padding: 0.6rem 0.9rem; border-radius: 10px; background: var(--arena-clara); color: var(--azul-marea); font-size: 0.92rem; }
+
+/* Ventana para anotar la cuenta */
+.dialogo-marea {
+  border: 0;
+  border-top: 3px solid var(--dorado);
+  border-radius: var(--radio);
+  padding: 1.8rem;
+  width: min(420px, calc(100vw - 2rem));
+  box-shadow: 0 30px 60px -20px rgba(8, 28, 48, 0.6);
+}
+.dialogo-marea::backdrop { background: rgba(8, 28, 48, 0.55); }
+
+/* Mis beneficios (cliente) */
+.cupon {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.2rem;
+  margin-bottom: 0.8rem;
+  border: 1.5px dashed var(--dorado);
+  border-radius: 14px;
+  background: linear-gradient(120deg, var(--crema), #fff);
+}
+.cupon-apagado { opacity: 0.6; border-color: #cfc6b4; }
+.cupon-tipo { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dorado); font-weight: 600; }
+.cupon-descripcion { font-family: var(--fuente-titulo); font-size: 1.35rem; color: var(--azul-marea); line-height: 1.2; margin: 0.15rem 0; }
+.cupon-vence { font-size: 0.85rem; color: var(--gris-suave); }
+.cupon-vence::first-letter { text-transform: uppercase; }
+.cupon-codigo { display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem; }
+.cupon-codigo-texto {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 1.05rem;
+  letter-spacing: 0.1em;
+  background: var(--arena-clara);
+  color: var(--azul-marea);
+  padding: 0.35rem 0.7rem;
+  border-radius: 8px;
+}
+.progreso-regalo { margin-top: 0.4rem; padding: 1rem 1.2rem; background: var(--arena-clara); border-radius: 14px; }
+.progreso-texto { font-size: 0.92rem; color: var(--tinta); }
+.progreso-cifra { font-size: 0.85rem; color: var(--dorado); font-weight: 600; }
+.barra-progreso {
+  width: 100%;
+  height: 10px;
+  margin-top: 0.6rem;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #e2d6bf;
+  appearance: none;
+}
+.barra-progreso::-webkit-progress-bar { background: #e2d6bf; border-radius: 999px; }
+.barra-progreso::-webkit-progress-value { background: linear-gradient(90deg, var(--dorado), var(--dorado-claro)); border-radius: 999px; }
+.barra-progreso::-moz-progress-bar { background: linear-gradient(90deg, var(--dorado), var(--dorado-claro)); border-radius: 999px; }
+.caja-datos { padding: 1.2rem; border: 1px solid #efe8da; border-radius: 14px; }
+@media (max-width: 576px) { .cupon-codigo { align-items: flex-start; } }
+.cupon-cuerpo { flex: 1 1 220px; min-width: 0; }
+.cupon-codigo { flex: 0 0 auto; }

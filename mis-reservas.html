@@ -44,11 +44,41 @@
 
       <div id="aviso-mis" class="oculto" role="alert"></div>
 
+      <section id="caja-beneficios" class="caja-beneficios oculto" aria-labelledby="titulo-beneficios">
+        <h2 class="grupo-titulo" id="titulo-beneficios">Mis beneficios</h2>
+        <div id="lista-beneficios"></div>
+        <div class="progreso-regalo" id="progreso-regalo">
+          <div class="d-flex justify-content-between flex-wrap gap-1">
+            <span class="progreso-texto" id="progreso-texto"></span>
+            <span class="progreso-cifra" id="progreso-cifra"></span>
+          </div>
+          <progress id="progreso-barra" class="barra-progreso" max="100" value="0"></progress>
+        </div>
+      </section>
+
       <h2 class="grupo-titulo">Próximas</h2>
       <div id="lista-proximas"><div class="vacio">Cargando…</div></div>
 
       <h2 class="grupo-titulo">Pasadas</h2>
       <div id="lista-pasadas"><div class="vacio">Cargando…</div></div>
+
+      <h2 class="grupo-titulo">Mis datos</h2>
+      <form id="form-datos" class="caja-datos">
+        <div class="row g-3 align-items-end">
+          <div class="col-sm-6">
+            <label class="form-label" for="dato-nacimiento">Fecha de cumpleaños</label>
+            <input class="form-control" type="date" id="dato-nacimiento" min="1900-01-01" autocomplete="bday">
+          </div>
+          <div class="col-sm-6">
+            <div class="form-check consentimiento">
+              <input class="form-check-input" type="checkbox" id="dato-promociones">
+              <label class="form-check-label" for="dato-promociones">Quiero recibir beneficios y promociones por correo</label>
+            </div>
+          </div>
+        </div>
+        <p class="ayuda-campo mt-2 mb-3">Con tu cumpleaños te mandamos un regalo unos días antes. Podés desactivar los correos cuando quieras; los beneficios igual aparecen acá.</p>
+        <button type="submit" class="btn-borde">Guardar mis datos</button>
+      </form>
      </div>
     </div>
   </main>
