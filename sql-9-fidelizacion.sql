@@ -5,12 +5,18 @@
 --
 --  Datos almacenados en Supabase
 --          ↓
---  Segmentación de clientes  (recencia, frecuencia y gasto = modelo RFM)
+--  Segmentación de clientes  (recencia + frecuencia de visitas
+--                             + preferencias: zona, día, grupo, ocasión)
 --          ↓
 --  Make (el mismo webhook de la Parte A)
 --          ↓
 --  Acciones de fidelización: cumpleaños · reactivación ·
---  beneficio por gasto · promociones según preferencias
+--  tarjeta de visitas · promociones según preferencias
+--  (con mensajes sugeridos por IA: ver sección 11)
+--
+--  Todo sale de las reservas: no hay que cargar nada a mano.
+--  Se puede volver a correr sin problema (también si ya se había
+--  corrido la versión anterior, la que usaba el gasto).
 --
 --  Los beneficios son cupones con código único que vencen.
 --  Los correos de beneficios solo se mandan a quien aceptó
@@ -21,11 +27,13 @@
 -- 1. DATOS NUEVOS
 -- ---------------------------------------------------------
 
--- Total de la cuenta de cada visita (lo anota el admin al liberar la mesa)
-alter table public.reserva add column if not exists gasto integer;
-alter table public.reserva drop constraint if exists reserva_gasto_ok;
-alter table public.reserva add constraint reserva_gasto_ok
-  check (gasto is null or gasto between 0 and 10000000);
+-- La versión anterior usaba el gasto de cada visita: ya no se usa
+drop trigger if exists antes_de_anotar_gasto on public.reserva;
+drop trigger if exists despues_de_anotar_gasto on public.reserva;
+drop function if exists public.validar_gasto();
+drop function if exists public.al_anotar_gasto();
+drop function if exists public.revisar_meta_gasto(uuid);
+alter table public.reserva drop column if exists gasto;
 
 -- Permiso para recibir beneficios y promociones por correo
 alter table public.usuario add column if not exists acepta_promociones boolean not null default false;
@@ -104,22 +112,30 @@ create table if not exists public.ajustes_fidelizacion (
   dias_inactivo          int  not null default 150 check (dias_inactivo between 30 and 730),
   visitas_frecuente      int  not null default 3   check (visitas_frecuente between 2 and 50),
   visitas_vip            int  not null default 6   check (visitas_vip between 3 and 100),
-  gasto_vip              int  not null default 40000 check (gasto_vip between 1000 and 10000000),
-  meta_gasto             int  not null default 20000 check (meta_gasto between 1000 and 10000000),
+  visitas_meta           int  not null default 5   check (visitas_meta between 2 and 50),
   dias_aviso_cumple      int  not null default 7   check (dias_aviso_cumple between 0 and 30),
   vigencia_dias          int  not null default 30  check (vigencia_dias between 7 and 180),
   beneficio_cumple       text not null default 'Postre de regalo para toda la mesa'
                          check (char_length(beneficio_cumple) between 3 and 120),
   beneficio_reactivacion text not null default '15 % de descuento en tu próxima cena'
                          check (char_length(beneficio_reactivacion) between 3 and 120),
-  beneficio_gasto        text not null default 'Una botella de vino de la casa'
-                         check (char_length(beneficio_gasto) between 3 and 120),
+  beneficio_visitas      text not null default 'Una botella de vino de la casa'
+                         check (char_length(beneficio_visitas) between 3 and 120),
   automatico             boolean not null default true,
   ultima_ejecucion       timestamptz,
   ultimo_resumen         jsonb,
   constraint riesgo_antes_que_inactivo check (dias_en_riesgo < dias_inactivo),
   constraint frecuente_antes_que_vip   check (visitas_frecuente < visitas_vip)
 );
+-- Si venía de la versión con gasto: pasamos a la tarjeta de visitas
+alter table public.ajustes_fidelizacion drop column if exists gasto_vip;
+alter table public.ajustes_fidelizacion drop column if exists meta_gasto;
+alter table public.ajustes_fidelizacion drop column if exists beneficio_gasto;
+alter table public.ajustes_fidelizacion add column if not exists visitas_meta int not null default 5
+  check (visitas_meta between 2 and 50);
+alter table public.ajustes_fidelizacion add column if not exists beneficio_visitas text not null
+  default 'Una botella de vino de la casa' check (char_length(beneficio_visitas) between 3 and 120);
+
 insert into public.ajustes_fidelizacion (id) values (1) on conflict (id) do nothing;
 alter table public.ajustes_fidelizacion enable row level security;
 
@@ -131,15 +147,17 @@ create policy "admin cambia reglas de fidelizacion" on public.ajustes_fidelizaci
   for update to authenticated using (public.es_admin()) with check (public.es_admin());
 -- La última ejecución la escribe solo el proceso diario
 revoke update on public.ajustes_fidelizacion from authenticated, anon;
-grant update (dias_en_riesgo, dias_inactivo, visitas_frecuente, visitas_vip, gasto_vip, meta_gasto,
+grant update (dias_en_riesgo, dias_inactivo, visitas_frecuente, visitas_vip, visitas_meta,
               dias_aviso_cumple, vigencia_dias, beneficio_cumple, beneficio_reactivacion,
-              beneficio_gasto, automatico) on public.ajustes_fidelizacion to authenticated;
+              beneficio_visitas, automatico) on public.ajustes_fidelizacion to authenticated;
 
 -- ---------------------------------------------------------
--- 3. SEGMENTACIÓN DE CLIENTES
+-- 3. SEGMENTACIÓN DE CLIENTES (recencia + frecuencia + preferencias)
 -- Una visita = reserva sentada o completada, o confirmada de un día
 -- que ya pasó (si nadie marcó "No vino", se asume que vino).
 -- ---------------------------------------------------------
+drop function if exists public.clientes_fidelizacion();
+drop function if exists public.datos_clientes();
 create or replace function public.datos_clientes()
 returns table (
   id_usuario         uuid,
@@ -151,9 +169,6 @@ returns table (
   cliente_desde      date,
   visitas            int,
   visitas_12m        int,
-  gasto_total        int,
-  gasto_12m          int,
-  ticket_promedio    int,
   ultima_visita      date,
   dias_sin_venir     int,
   proxima_reserva    date,
@@ -183,11 +198,6 @@ returns table (
       (select count(*) from v where v.id_usuario = u.id_usuario)::int as visitas,
       (select count(*) from v where v.id_usuario = u.id_usuario
                               and v.fecha > public.hoy_uy() - 365)::int as visitas_12m,
-      (select coalesce(sum(v.gasto), 0) from v where v.id_usuario = u.id_usuario)::int as gasto_total,
-      (select coalesce(sum(v.gasto), 0) from v where v.id_usuario = u.id_usuario
-                                              and v.fecha > public.hoy_uy() - 365)::int as gasto_12m,
-      (select round(avg(v.gasto)) from v where v.id_usuario = u.id_usuario
-                                          and v.gasto is not null)::int as ticket_promedio,
       (select max(v.fecha) from v where v.id_usuario = u.id_usuario) as ultima_visita,
       (select min(r.fecha) from public.reserva r
         where r.id_usuario = u.id_usuario and r.estado = 'confirmada'
@@ -221,7 +231,7 @@ returns table (
   )
   select
     b.id_usuario, b.nombre, b.email, b.telefono, b.fecha_nacimiento, b.acepta_promociones,
-    b.cliente_desde, b.visitas, b.visitas_12m, b.gasto_total, b.gasto_12m, b.ticket_promedio,
+    b.cliente_desde, b.visitas, b.visitas_12m,
     b.ultima_visita,
     (public.hoy_uy() - b.ultima_visita)::int as dias_sin_venir,
     b.proxima_reserva, b.cancelaciones, b.no_asistio,
@@ -232,7 +242,7 @@ returns table (
       when b.visitas = 0 then 'nuevo'
       when b.proxima_reserva is null and public.hoy_uy() - b.ultima_visita > a.dias_inactivo then 'inactivo'
       when b.proxima_reserva is null and public.hoy_uy() - b.ultima_visita > a.dias_en_riesgo then 'en_riesgo'
-      when b.gasto_12m >= a.gasto_vip or b.visitas_12m >= a.visitas_vip then 'vip'
+      when b.visitas_12m >= a.visitas_vip then 'vip'
       when b.visitas_12m >= a.visitas_frecuente then 'frecuente'
       else 'nuevo'
     end as segmento
@@ -244,7 +254,7 @@ create or replace function public.clientes_fidelizacion()
 returns table (
   id_usuario uuid, nombre text, email text, telefono text, fecha_nacimiento date,
   acepta_promociones boolean, cliente_desde date, visitas int, visitas_12m int,
-  gasto_total int, gasto_12m int, ticket_promedio int, ultima_visita date,
+  ultima_visita date,
   dias_sin_venir int, proxima_reserva date, cancelaciones int, no_asistio int,
   zona_favorita text, dia_favorito int, horario_favorito text, grupo_habitual int,
   ocasiones text[], proximo_cumple date, dias_para_cumple int, segmento text
@@ -256,7 +266,7 @@ begin
   return query select * from public.datos_clientes();
 end; $$;
 
--- Lo que ve el cliente: cuánto le falta para su próximo regalo
+-- Lo que ve el cliente: su tarjeta de visitas (sellos) y su próximo regalo
 create or replace function public.mi_fidelizacion()
 returns jsonb language plpgsql stable security definer set search_path = public as $$
 declare
@@ -269,11 +279,11 @@ begin
     return null;
   end if;
   return jsonb_build_object(
-    'visitas',     c.visitas,
-    'gasto_total', c.gasto_total,
-    'meta_gasto',  a.meta_gasto,
-    'falta',       a.meta_gasto - (c.gasto_total % a.meta_gasto),
-    'beneficio_gasto', a.beneficio_gasto,
+    'visitas',      c.visitas,
+    'visitas_meta', a.visitas_meta,
+    'sellos',       c.visitas % a.visitas_meta,
+    'faltan',       a.visitas_meta - (c.visitas % a.visitas_meta),
+    'beneficio_visitas', a.beneficio_visitas,
     'beneficio_cumple', a.beneficio_cumple,
     'proximo_cumple', c.proximo_cumple
   );
@@ -305,7 +315,7 @@ create table if not exists public.beneficio (
   id_beneficio   bigint generated always as identity primary key,
   codigo         text not null unique,
   id_usuario     uuid not null references public.usuario(id_usuario) on delete cascade,
-  tipo           text not null check (tipo in ('cumpleanos', 'reactivacion', 'gasto', 'campana')),
+  tipo           text not null,
   descripcion    text not null,
   periodo        text not null,       -- evita repetir: un regalo de cumpleaños por año, etc.
   id_campana     bigint references public.campana(id_campana) on delete set null,
@@ -316,6 +326,11 @@ create table if not exists public.beneficio (
   correo_enviado boolean not null default false,
   unique (id_usuario, tipo, periodo)
 );
+-- Tipos de beneficio (la versión anterior tenía 'gasto': pasa a 'visitas')
+alter table public.beneficio drop constraint if exists beneficio_tipo_check;
+update public.beneficio set tipo = 'visitas' where tipo = 'gasto';
+alter table public.beneficio add constraint beneficio_tipo_check
+  check (tipo in ('cumpleanos', 'reactivacion', 'visitas', 'campana'));
 alter table public.beneficio enable row level security;
 drop policy if exists "ver mis beneficios o admin ve todos" on public.beneficio;
 create policy "ver mis beneficios o admin ve todos" on public.beneficio
@@ -373,8 +388,8 @@ begin
   return true;
 end; $$;
 
--- ¿Llegó a la meta de gasto? (se revisa cada vez que se anota una cuenta)
-create or replace function public.revisar_meta_gasto(p_usuario uuid)
+-- Tarjeta de visitas: cada N visitas (5 al principio), un regalo
+create or replace function public.revisar_tarjeta_visitas(p_usuario uuid)
 returns boolean language plpgsql security definer set search_path = public as $$
 declare
   a     public.ajustes_fidelizacion;
@@ -382,47 +397,33 @@ declare
   hito  int;
 begin
   select * into a from public.ajustes_fidelizacion where id = 1;
-  select d.gasto_total into total from public.datos_clientes() d where d.id_usuario = p_usuario;
-  hito := coalesce(total, 0) / a.meta_gasto;
+  select d.visitas into total from public.datos_clientes() d where d.id_usuario = p_usuario;
+  hito := coalesce(total, 0) / a.visitas_meta;
   if hito < 1 then
     return false;
   end if;
-  return public.dar_beneficio(p_usuario, 'gasto', 'meta-' || hito, a.beneficio_gasto,
-                              public.hoy_uy() + a.vigencia_dias);
+  return public.dar_beneficio(p_usuario, 'visitas', 'tarjeta-' || hito, a.beneficio_visitas,
+                              public.hoy_uy() + a.vigencia_dias,
+                              null, jsonb_build_object('visitas', total));
 end; $$;
 
--- El gasto solo se anota en mesas que ya se sentaron
-create or replace function public.validar_gasto()
-returns trigger language plpgsql as $$
-begin
-  if new.gasto is not null and new.gasto is distinct from old.gasto
-     and new.estado not in ('sentada', 'completada') then
-    raise exception 'Solo se puede anotar el gasto de una mesa que ya se sentó';
-  end if;
-  return new;
-end; $$;
-
-drop trigger if exists antes_de_anotar_gasto on public.reserva;
-create trigger antes_de_anotar_gasto
-before update of gasto on public.reserva
-for each row execute function public.validar_gasto();
-
-create or replace function public.al_anotar_gasto()
+-- Cada vez que el admin sienta a un grupo o libera la mesa, se suma un sello
+create or replace function public.al_sumar_visita()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
-  if new.gasto is not null and new.gasto is distinct from old.gasto then
-    perform public.revisar_meta_gasto(new.id_usuario);
+  if new.estado in ('sentada', 'completada') and old.estado not in ('sentada', 'completada') then
+    perform public.revisar_tarjeta_visitas(new.id_usuario);
   end if;
   return new;
 end; $$;
 
-drop trigger if exists despues_de_anotar_gasto on public.reserva;
-create trigger despues_de_anotar_gasto
-after update of gasto on public.reserva
-for each row execute function public.al_anotar_gasto();
+drop trigger if exists despues_de_sumar_visita on public.reserva;
+create trigger despues_de_sumar_visita
+after update of estado on public.reserva
+for each row execute function public.al_sumar_visita();
 
 -- ---------------------------------------------------------
--- 5. PROCESO DIARIO: cumpleaños, reactivación y metas de gasto
+-- 5. PROCESO DIARIO: cumpleaños, reactivación y tarjeta de visitas
 -- ---------------------------------------------------------
 create or replace function public.fidelizacion_diaria(p_forzar boolean default false)
 returns jsonb language plpgsql security definer set search_path = public as $$
@@ -431,7 +432,7 @@ declare
   c        record;
   n_cumple int := 0;
   n_react  int := 0;
-  n_gasto  int := 0;
+  n_visit  int := 0;
   resumen  jsonb;
 begin
   select * into a from public.ajustes_fidelizacion where id = 1;
@@ -457,13 +458,13 @@ begin
       end if;
     end if;
 
-    -- Meta de gasto (por si se anotó alguna cuenta a mano en Supabase)
-    if c.gasto_total >= a.meta_gasto and public.revisar_meta_gasto(c.id_usuario) then
-      n_gasto := n_gasto + 1;
+    -- Tarjeta de visitas (también cuenta las reservas pasadas que nadie cerró)
+    if c.visitas >= a.visitas_meta and public.revisar_tarjeta_visitas(c.id_usuario) then
+      n_visit := n_visit + 1;
     end if;
   end loop;
 
-  resumen := jsonb_build_object('cumpleanos', n_cumple, 'reactivacion', n_react, 'gasto', n_gasto);
+  resumen := jsonb_build_object('cumpleanos', n_cumple, 'reactivacion', n_react, 'visitas', n_visit);
   update public.ajustes_fidelizacion
      set ultima_ejecucion = now(), ultimo_resumen = resumen
    where id = 1;
@@ -708,11 +709,12 @@ begin
       v_cuerpo := format('Hola, %s. El mar sigue ahí, la parrilla también, y tu mesa te está esperando. '
                          'Para que vuelvas, te guardamos esto:', v_nombre)
                   || v_cupon || v_boton;
-    when 'beneficio_gasto' then
-      v_asunto := 'Gracias por elegirnos: tenés un regalo en Marea';
+    when 'beneficio_visitas' then
+      v_asunto := 'Completaste tu tarjeta de visitas: tenés un regalo en Marea';
       v_titulo := format('Gracias, %s', v_nombre);
-      v_cuerpo := 'Ya compartiste muchas cenas con nosotros y queremos agradecértelo. '
-                  'En tu próxima visita te espera:' || v_cupon || v_boton;
+      v_cuerpo := format('Ya son <b>%s visitas</b> a Marea y queremos agradecértelo. '
+                         'En tu próxima cena te espera:', coalesce(d->>'visitas', 'varias'))
+                  || v_cupon || v_boton;
     when 'campana' then
       v_asunto := coalesce(d->>'asunto_campana', 'Novedades de Marea');
       v_titulo := format('Hola, %s', coalesce(nullif(v_nombre, ''), 'amigo de Marea'));
@@ -723,7 +725,7 @@ begin
 
   if d->>'tipo' like 'beneficio_%' or d->>'tipo' = 'campana' then
     v_pie := v_pie || '<br>Recibís este correo porque aceptaste recibir beneficios de Marea. '
-             || format('Podés desactivarlo cuando quieras desde <a href="%s/mis-reservas.html" style="color:#6b7785">Mis reservas</a>.', v_sitio);
+             || format('Podés desactivarlo cuando quieras desde <a href="%s/perfil.html" style="color:#6b7785">Mi perfil</a>.', v_sitio);
   end if;
 
   v_html := format(
@@ -751,7 +753,8 @@ end; $$;
 revoke execute on function public.avisar_n8n(jsonb)                               from public, anon, authenticated;
 revoke execute on function public.datos_clientes()                                from public, anon, authenticated;
 revoke execute on function public.dar_beneficio(uuid, text, text, text, date, bigint, jsonb) from public, anon, authenticated;
-revoke execute on function public.revisar_meta_gasto(uuid)                        from public, anon, authenticated;
+revoke execute on function public.revisar_tarjeta_visitas(uuid)                   from public, anon, authenticated;
+revoke execute on function public.al_sumar_visita()                               from public, anon, authenticated;
 revoke execute on function public.fidelizacion_diaria(boolean)                    from public, anon, authenticated;
 revoke execute on function public.clientes_de_campana(text, text, text)           from public, anon, authenticated;
 revoke execute on function public.generar_codigo()                                from public, anon, authenticated;
@@ -791,3 +794,73 @@ begin
     raise notice 'Falta activar Cron en Supabase (Integrations > Cron). Mientras tanto, usá el botón "Ejecutar ahora" del panel.';
   end if;
 end $$;
+
+-- ---------------------------------------------------------
+-- 11. IA: RESUMEN ANÓNIMO DE UN PÚBLICO PARA SUGERIR PROMOCIONES
+-- La función "sugerir-promocion" (Supabase Edge Function) llama a esto
+-- con la sesión del admin y le pasa el resultado a Claude.
+-- A la IA NUNCA le llegan nombres, correos ni teléfonos: solo totales.
+-- Límite: 30 sugerencias por día, para cuidar el crédito de la API.
+-- ---------------------------------------------------------
+create table if not exists public.uso_ia (
+  id         bigint generated always as identity primary key,
+  id_usuario uuid references public.usuario(id_usuario) on delete set null,
+  fecha      timestamptz not null default now()
+);
+alter table public.uso_ia enable row level security;
+drop policy if exists "admin ve uso de ia" on public.uso_ia;
+create policy "admin ve uso de ia" on public.uso_ia
+  for select to authenticated using (public.es_admin());
+
+create or replace function public.resumen_para_ia(p_segmento text, p_zona text, p_grupo text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_seg  text := nullif(trim(p_segmento), '');
+  v_zona text := nullif(trim(p_zona), '');
+  v_grp  text := nullif(trim(p_grupo), '');
+  v_hoy  int;
+  r      jsonb;
+begin
+  if not public.es_admin() then
+    raise exception 'Solo el administrador puede usar la IA';
+  end if;
+  select count(*) into v_hoy from public.uso_ia
+   where fecha >= (public.hoy_uy()::timestamp at time zone 'America/Montevideo');
+  if v_hoy >= 30 then
+    raise exception 'Se llegó al límite de 30 sugerencias de IA por hoy. Probá mañana.';
+  end if;
+  insert into public.uso_ia (id_usuario) values (auth.uid());
+
+  with d as (
+    select c.* from public.datos_clientes() c
+     where c.id_usuario in (select id from public.clientes_de_campana(v_seg, v_zona, v_grp) x(id))
+  )
+  select jsonb_build_object(
+    'segmento',           coalesce(v_seg, 'todos'),
+    'zona_elegida',       coalesce(v_zona, 'cualquiera'),
+    'grupo_elegido',      coalesce(v_grp, 'cualquiera'),
+    'clientes',           (select count(*) from d),
+    'aceptan_correos',    (select count(*) from d where acepta_promociones),
+    'visitas_promedio',   (select round(avg(visitas), 1) from d),
+    'dias_sin_venir_promedio', (select round(avg(dias_sin_venir)) from d),
+    'zonas_favoritas',    (select jsonb_object_agg(zona_favorita, n) from
+                            (select zona_favorita, count(*) n from d where zona_favorita is not null group by 1) z),
+    'dias_favoritos',     (select jsonb_object_agg(dia, n) from
+                            (select (array['lunes','martes','miércoles','jueves','viernes','sábado','domingo'])[dia_favorito] dia,
+                                    count(*) n from d where dia_favorito is not null group by 1) z),
+    'horario',            (select jsonb_object_agg(horario_favorito, n) from
+                            (select horario_favorito, count(*) n from d where horario_favorito is not null group by 1) z),
+    'en_pareja',          (select count(*) from d where grupo_habitual <= 2),
+    'en_grupo',           (select count(*) from d where grupo_habitual >= 4),
+    'ocasiones',          (select jsonb_object_agg(o, n) from
+                            (select o, count(*) n from d, unnest(d.ocasiones) o group by 1) z),
+    'cumplen_en_30_dias', (select count(*) from d where dias_para_cumple <= 30),
+    'beneficios_actuales', (select jsonb_build_object('cumpleanos', beneficio_cumple,
+                              'reactivacion', beneficio_reactivacion, 'tarjeta_visitas', beneficio_visitas)
+                              from public.ajustes_fidelizacion where id = 1)
+  ) into r;
+  return r;
+end; $$;
+
+revoke execute on function public.resumen_para_ia(text, text, text) from public, anon;
+grant execute on function public.resumen_para_ia(text, text, text) to authenticated;

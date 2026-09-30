@@ -61,6 +61,9 @@
 
         <div id="alerta-ocupacion" class="alerta-ocupacion oculto" role="alert"></div>
 
+        <!-- Pronóstico del clima para la noche (API de Open-Meteo) -->
+        <div id="clima-noche" class="clima-noche oculto" aria-live="polite"></div>
+
         <!-- Indicadores -->
         <div class="row g-3">
           <div class="col-6 col-md-4 col-xl-2">
@@ -248,10 +251,6 @@
                 <label class="form-label" for="r-comentarios">Comentarios</label>
                 <input class="form-control" type="text" id="r-comentarios" maxlength="300" placeholder="Alergias, silla de bebé…">
               </div>
-              <div class="col-md-3 oculto" id="grupo-gasto">
-                <label class="form-label" for="r-gasto">Total de la cuenta ($)</label>
-                <input class="form-control" type="number" id="r-gasto" min="0" max="10000000" step="1" placeholder="Ej: 5400">
-              </div>
             </div>
             <div class="d-flex gap-3 mt-4 flex-wrap">
               <button type="submit" class="btn-marea oscuro">Guardar</button>
@@ -399,7 +398,7 @@
         <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
           <div>
             <h2 class="grupo-titulo mt-0 mb-1">Segmentos de clientes</h2>
-            <p class="pagina-bajada mb-0">Se calculan solos con cuándo vino cada cliente por última vez, cuántas veces vino y cuánto gastó (modelo RFM).</p>
+            <p class="pagina-bajada mb-0">Se calculan solos con las reservas: cuándo vino cada cliente por última vez y cuántas veces vino en el año, más sus preferencias.</p>
           </div>
           <button type="button" class="btn-borde" id="btn-recargar-fide">↻ Actualizar</button>
         </div>
@@ -457,7 +456,7 @@
                       <th>Cliente</th>
                       <th>Segmento</th>
                       <th>Visitas</th>
-                      <th>Gasto 12 m</th>
+                      <th>Tarjeta</th>
                       <th>Última visita</th>
                       <th>Preferencias</th>
                       <th>Cumpleaños</th>
@@ -485,10 +484,6 @@
               <input class="form-control" type="number" id="regla-vip-visitas" min="3" max="100" required>
             </div>
             <div class="col-6 col-md-3">
-              <label class="form-label" for="regla-vip-gasto">o VIP desde (gasto al año, $)</label>
-              <input class="form-control" type="number" id="regla-vip-gasto" min="1000" step="500" required>
-            </div>
-            <div class="col-6 col-md-3">
               <label class="form-label" for="regla-riesgo">En riesgo (días sin venir)</label>
               <input class="form-control" type="number" id="regla-riesgo" min="15" max="365" required>
             </div>
@@ -514,12 +509,12 @@
               <input class="form-control" type="text" id="regla-ben-react" minlength="3" maxlength="120" required>
             </div>
             <div class="col-md-6">
-              <label class="form-label" for="regla-ben-gasto">🍷 Beneficio por gasto</label>
-              <input class="form-control" type="text" id="regla-ben-gasto" minlength="3" maxlength="120" required>
+              <label class="form-label" for="regla-ben-visitas">🍷 Premio de la tarjeta de visitas</label>
+              <input class="form-control" type="text" id="regla-ben-visitas" minlength="3" maxlength="120" required>
             </div>
             <div class="col-6 col-md-3">
-              <label class="form-label" for="regla-meta">Cada cuánto gasto ($)</label>
-              <input class="form-control" type="number" id="regla-meta" min="1000" step="500" required>
+              <label class="form-label" for="regla-meta">Cada cuántas visitas</label>
+              <input class="form-control" type="number" id="regla-meta" min="2" max="50" required>
             </div>
             <div class="col-md-6 d-flex align-items-end">
               <div class="form-check consentimiento">
@@ -575,6 +570,20 @@
                 </div>
                 <div class="col-12">
                   <p class="alcance" id="camp-alcance">Calculando a cuántos llega…</p>
+                </div>
+                <div class="col-12">
+                  <div class="caja-ia">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                      <div>
+                        <div class="caja-ia-titulo">✨ Sugerir con IA</div>
+                        <div class="celda-secundaria">Claude lee las preferencias de este público (sin datos personales) y te propone la promoción.</div>
+                      </div>
+                      <button type="button" class="btn-ia" id="btn-ia">Sugerir</button>
+                    </div>
+                    <label class="form-label mt-2" for="camp-idea">Idea <span class="plano-opcional">(opcional)</span></label>
+                    <input class="form-control" type="text" id="camp-idea" maxlength="200" placeholder="Ej: llegaron ostras de Maldonado · noche de jazz el jueves">
+                    <p class="caja-ia-porque oculto" id="camp-porque" role="status"></p>
+                  </div>
                 </div>
                 <div class="col-12">
                   <label class="form-label" for="camp-asunto">Asunto del correo</label>
@@ -656,20 +665,6 @@
     </div>
   </main>
 
-  <!-- Ventana para anotar el total de la cuenta -->
-  <dialog id="dialogo-gasto" class="dialogo-marea" aria-labelledby="gasto-titulo">
-    <form id="form-gasto" method="dialog">
-      <h2 class="grupo-titulo mt-0" id="gasto-titulo">Liberar la mesa</h2>
-      <label class="form-label" for="gasto-monto">Total de la cuenta ($)</label>
-      <input class="form-control" type="number" id="gasto-monto" min="0" max="10000000" step="1" placeholder="Ej: 5400" inputmode="numeric">
-      <p class="ayuda-campo" id="gasto-ayuda"></p>
-      <div class="d-flex gap-2 mt-3 flex-wrap">
-        <button type="submit" class="btn-marea oscuro" id="gasto-confirmar">Liberar mesa</button>
-        <button type="button" class="btn-borde" id="gasto-volver">Volver</button>
-      </div>
-    </form>
-  </dialog>
-
   <footer class="pie-marea pie-simple">
     <div class="container">
       <div class="pie-final">
@@ -683,6 +678,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="comun.js"></script>
+  <script src="clima.js"></script>
   <script src="plano.js"></script>
   <script src="admin.js"></script>
   <script src="admin-salon.js"></script>

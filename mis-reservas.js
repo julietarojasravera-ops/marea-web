@@ -82,7 +82,7 @@ document.getElementById("lista-proximas").addEventListener("click", async (e) =>
 const NOMBRES_BENEFICIO = {
   cumpleanos: "🎂 Regalo de cumpleaños",
   reactivacion: "🌊 Te extrañamos",
-  gasto: "🍷 Gracias por elegirnos",
+  visitas: "🍷 Tarjeta de visitas completa",
   campana: "✨ Promoción",
 };
 
@@ -126,15 +126,14 @@ async function cargarBeneficios() {
 
   const r = resumen.data;
   const progreso = document.getElementById("progreso-regalo");
-  if (!r || resumen.error) { progreso.classList.add("oculto"); return; }
-  const avance = r.meta_gasto - r.falta;
-  document.getElementById("progreso-texto").textContent =
-    `Te faltan ${formatearPesos(r.falta)} en consumos para tu próximo regalo: ${r.beneficio_gasto.toLowerCase()}.`;
-  document.getElementById("progreso-cifra").textContent =
-    `${formatearPesos(avance)} de ${formatearPesos(r.meta_gasto)}`;
-  const barra = document.getElementById("progreso-barra");
-  barra.max = r.meta_gasto;
-  barra.value = avance;
+  if (!r || resumen.error || !r.visitas_meta) { progreso.classList.add("oculto"); return; }
+  // Un sello por cada visita; al completar la tarjeta llega el regalo
+  document.getElementById("sellos").innerHTML = Array.from({ length: r.visitas_meta }, (_, i) =>
+    `<span class="sello ${i < r.sellos ? "lleno" : ""}">${i < r.sellos ? "🌊" : i + 1}</span>`).join("");
+  document.getElementById("progreso-cifra").textContent = `${r.sellos} de ${r.visitas_meta}`;
+  document.getElementById("progreso-texto").textContent = r.faltan === 1
+    ? `¡Te falta 1 visita para tu regalo: ${r.beneficio_visitas.toLowerCase()}!`
+    : `Te faltan ${r.faltan} visitas para tu regalo: ${r.beneficio_visitas.toLowerCase()}. Cada vez que venís a cenar, sumás un sello.`;
 }
 
 (async () => {

@@ -89,6 +89,7 @@ function redibujarPlano() {
 
 let pedidoPlano = 0;
 async function actualizarPlano() {
+  if (typeof pintarClimaReserva === "function") pintarClimaReserva(campoFecha.value, campoHora.value);
   if (!campoHora.value) return;
   const numero = ++pedidoPlano;   // si cambian rápido los campos, gana el último pedido
   const { data, error } = await db.rpc("estado_mesas", {

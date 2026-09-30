@@ -1,18 +1,19 @@
 // =========================================================
 // Panel admin: Fidelización (PARTE B)
 // Datos almacenados → segmentación → Make → acciones de fidelización
+// + IA (Claude) que sugiere promociones según el público elegido
 // Las reglas y los cupones viven en la base (sql-9): acá solo se muestran.
 // =========================================================
 
 const SEGMENTOS = {
-  vip:       { nombre: "VIP",        icono: "★", texto: "Vienen mucho o gastan mucho en el año." },
+  vip:       { nombre: "VIP",        icono: "★", texto: "Los que más vienen: muchas visitas en el año." },
   frecuente: { nombre: "Frecuentes", icono: "↻", texto: "Vuelven seguido: varias visitas en el año." },
   nuevo:     { nombre: "Nuevos",     icono: "✦", texto: "Recién llegan: todavía pocas visitas." },
   en_riesgo: { nombre: "En riesgo",  icono: "!", texto: "Hace un tiempo que no vienen." },
   inactivo:  { nombre: "Inactivos",  icono: "–", texto: "Hace mucho que no vienen." },
 };
 const DIAS_SEMANA = ["", "lunes", "martes", "miércoles", "jueves", "viernes", "sábados", "domingos"];
-const NOMBRES_TIPO_BENEFICIO = { cumpleanos: "Cumpleaños", reactivacion: "Reactivación", gasto: "Meta de gasto", campana: "Promoción" };
+const NOMBRES_TIPO_BENEFICIO = { cumpleanos: "Cumpleaños", reactivacion: "Reactivación", visitas: "Tarjeta de visitas", campana: "Promoción" };
 
 let clientesFide = [];
 let segmentoElegido = "";
@@ -96,12 +97,22 @@ function cumpleDe(c) {
           ${pronto ? `<div class="celda-secundaria">${c.dias_para_cumple === 0 ? "¡hoy!" : `en ${c.dias_para_cumple} días`}</div>` : ""}`;
 }
 
+// Tarjeta de visitas: ●●●○○ (cada N visitas, un regalo)
+function sellosDe(visitas) {
+  const meta = reglasFide ? reglasFide.visitas_meta : 5;
+  const sellos = visitas % meta;
+  const puntos = Array.from({ length: meta }, (_, i) =>
+    `<span class="sello-chico ${i < sellos ? "lleno" : ""}"></span>`).join("");
+  return `<span class="sellos-fila" title="${sellos} de ${meta} sellos">${puntos}</span>
+          <div class="celda-secundaria">${sellos} de ${meta}${visitas >= meta ? ` · ${Math.floor(visitas / meta)} ${Math.floor(visitas / meta) === 1 ? "premio" : "premios"}` : ""}</div>`;
+}
+
 function pintarTablaFide() {
   const texto = document.getElementById("buscar-fide").value.trim().toLowerCase();
   const lista = clientesFide
     .filter((c) => !segmentoElegido || c.segmento === segmentoElegido)
     .filter((c) => !texto || [c.nombre, c.email].some((v) => (v || "").toLowerCase().includes(texto)))
-    .sort((a, b) => b.gasto_12m - a.gasto_12m || b.visitas - a.visitas);
+    .sort((a, b) => b.visitas_12m - a.visitas_12m || b.visitas - a.visitas);
 
   const s = SEGMENTOS[segmentoElegido];
   document.getElementById("titulo-lista-segmento").textContent = s ? s.nombre : "Todos los clientes";
@@ -121,8 +132,8 @@ function pintarTablaFide() {
         <div class="celda-secundaria">${esc(c.email)}${c.acepta_promociones ? "" : " · sin correos"}</div>
       </td>
       <td>${textoSegmento(c.segmento)}</td>
-      <td>${c.visitas}${c.no_asistio ? `<div class="celda-secundaria">${c.no_asistio} sin venir</div>` : ""}</td>
-      <td class="celda-fecha">${formatearPesos(c.gasto_12m)}${c.ticket_promedio ? `<div class="celda-secundaria">${formatearPesos(c.ticket_promedio)} por visita</div>` : ""}</td>
+      <td>${c.visitas}<div class="celda-secundaria">${c.visitas_12m} en el año${c.no_asistio ? ` · ${c.no_asistio} sin venir` : ""}</div></td>
+      <td class="celda-fecha">${sellosDe(c.visitas)}</td>
       <td class="celda-fecha">${haceDias(c.dias_sin_venir)}${c.proxima_reserva ? `<div class="celda-secundaria">vuelve el ${formatearFecha(c.proxima_reserva).replace(/^\w+,\s*/, "")}</div>` : ""}</td>
       <td class="celda-notas">${preferenciasDe(c)}</td>
       <td>${cumpleDe(c)}</td>
@@ -138,7 +149,7 @@ function pintarReglas(beneficios) {
   document.getElementById("reglas-resumen").innerHTML = `
     <div class="regla"><span class="regla-icono">🎂</span><div><b>Cumpleaños</b> · ${r.dias_aviso_cumple} días antes<div class="celda-secundaria">${esc(r.beneficio_cumple)}</div></div></div>
     <div class="regla"><span class="regla-icono">🌊</span><div><b>Reactivación</b> · a los ${r.dias_en_riesgo} días sin venir<div class="celda-secundaria">${esc(r.beneficio_reactivacion)}</div></div></div>
-    <div class="regla"><span class="regla-icono">🍷</span><div><b>Meta de gasto</b> · cada ${formatearPesos(r.meta_gasto)}<div class="celda-secundaria">${esc(r.beneficio_gasto)}</div></div></div>
+    <div class="regla"><span class="regla-icono">🍷</span><div><b>Tarjeta de visitas</b> · cada ${r.visitas_meta} visitas<div class="celda-secundaria">${esc(r.beneficio_visitas)}</div></div></div>
     ${r.automatico ? "" : '<div class="aviso aviso-info mt-2">Las acciones automáticas están apagadas. Solo se ejecutan con el botón.</div>'}`;
 
   const hoy = hoyISO();
@@ -156,7 +167,7 @@ function pintarReglas(beneficios) {
   if (r.ultima_ejecucion) {
     const res = r.ultimo_resumen || {};
     ultima.textContent = `Última revisión: ${fechaHora(r.ultima_ejecucion)} · ` +
-      `${res.cumpleanos || 0} cumpleaños, ${res.reactivacion || 0} reactivaciones, ${res.gasto || 0} metas de gasto.`;
+      `${res.cumpleanos || 0} cumpleaños, ${res.reactivacion || 0} reactivaciones, ${res.visitas || 0} tarjetas completas.`;
   } else {
     ultima.textContent = "Todavía no se ejecutó ninguna vez.";
   }
@@ -167,19 +178,19 @@ document.getElementById("btn-ejecutar-fide").addEventListener("click", async (e)
   const { data, error } = await db.rpc("ejecutar_fidelizacion");
   e.target.disabled = false;
   if (error) { avisoAdmin("error", mensajeDeError(error)); return; }
-  const total = (data.cumpleanos || 0) + (data.reactivacion || 0) + (data.gasto || 0);
+  const total = (data.cumpleanos || 0) + (data.reactivacion || 0) + (data.visitas || 0);
   avisoAdmin("ok", total
-    ? `Listo: se entregaron ${total} beneficios (${data.cumpleanos} de cumpleaños, ${data.reactivacion} de reactivación y ${data.gasto} por meta de gasto).`
+    ? `Listo: se entregaron ${total} beneficios (${data.cumpleanos} de cumpleaños, ${data.reactivacion} de reactivación y ${data.visitas} por tarjeta de visitas).`
     : "Listo: hoy no había beneficios nuevos para entregar.");
   cargarFidelizacion();
 });
 
 // ---------- Editar reglas ----------
 const CAMPOS_REGLAS = {
-  "regla-frecuente": "visitas_frecuente", "regla-vip-visitas": "visitas_vip", "regla-vip-gasto": "gasto_vip",
+  "regla-frecuente": "visitas_frecuente", "regla-vip-visitas": "visitas_vip",
   "regla-riesgo": "dias_en_riesgo", "regla-inactivo": "dias_inactivo", "regla-ben-cumple": "beneficio_cumple",
   "regla-aviso-cumple": "dias_aviso_cumple", "regla-vigencia": "vigencia_dias",
-  "regla-ben-react": "beneficio_reactivacion", "regla-ben-gasto": "beneficio_gasto", "regla-meta": "meta_gasto",
+  "regla-ben-react": "beneficio_reactivacion", "regla-ben-visitas": "beneficio_visitas", "regla-meta": "visitas_meta",
 };
 const formReglas = document.getElementById("form-reglas");
 
@@ -297,6 +308,35 @@ document.getElementById("form-campana").addEventListener("submit", async (e) => 
   avisoAdmin("ok", `Promoción "${data.nombre}" enviada a ${data.destinatarios} ${data.destinatarios === 1 ? "cliente" : "clientes"}.`);
   e.target.reset();
   cargarFidelizacion();
+});
+
+// ---------- IA: sugerir la promoción ----------
+document.getElementById("btn-ia").addEventListener("click", async (e) => {
+  const boton = e.target;
+  const porque = document.getElementById("camp-porque");
+  boton.disabled = true;
+  boton.textContent = "Pensando…";
+  porque.classList.add("oculto");
+  const v = valoresCampana();
+  const { data, error } = await db.functions.invoke("sugerir-promocion", {
+    body: { ...v, idea: document.getElementById("camp-idea").value.trim() },
+  });
+  boton.disabled = false;
+  boton.textContent = "Sugerir otra";
+  let problema = data && data.error;
+  if (error && !problema) {
+    // Si la función respondió con error, el detalle viene en el cuerpo
+    try { problema = (await error.context.json()).error; } catch (err) { problema = null; }
+    problema = problema || "No se pudo contactar a la IA. ¿Está publicada la función sugerir-promocion?";
+  }
+  if (problema) { avisoAdmin("error", problema); return; }
+
+  document.getElementById("camp-nombre").value = data.nombre;
+  document.getElementById("camp-asunto").value = data.asunto;
+  document.getElementById("camp-mensaje").value = data.mensaje;
+  document.getElementById("camp-beneficio").value = data.beneficio;
+  porque.textContent = `💡 ${data.por_que} Revisá el texto y cambiá lo que quieras antes de enviar.`;
+  porque.classList.remove("oculto");
 });
 
 function pintarCampanas(campanas, beneficios) {

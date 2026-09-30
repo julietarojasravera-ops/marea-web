@@ -1163,7 +1163,6 @@ a { color: var(--azul-ola); }
 
 .cumple-pronto { color: var(--coral); font-weight: 600; }
 .celda-codigo { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 0.85rem; white-space: nowrap; }
-.nota-gasto { font-size: 0.82rem; color: var(--verde-alga); font-weight: 600; margin-top: 0.2rem; }
 
 /* Acciones automáticas */
 .regla { display: flex; gap: 0.7rem; align-items: flex-start; padding: 0.55rem 0; border-top: 1px solid #efe8da; font-size: 0.92rem; }
@@ -1342,4 +1341,81 @@ a { color: var(--azul-ola); }
   #menu.nav-enlaces a[href="reservar.html"] { margin-bottom: 0.3rem; text-align: center; }
   .perfil-nombre { font-size: 1.5rem; }
   .perfil-avatar { width: 3.4rem; height: 3.4rem; font-size: 1.6rem; }
+}
+
+/* =========================================================
+   TARJETA DE VISITAS · IA · CLIMA
+   ========================================================= */
+.tarjeta-sellos {
+  margin-top: 0.4rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: 14px;
+  color: var(--espuma);
+  background:
+    radial-gradient(ellipse at 90% 0%, rgba(212, 180, 131, 0.3), transparent 60%),
+    linear-gradient(150deg, var(--azul-noche), var(--azul-marea));
+}
+.tarjeta-sellos-cabecera { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+.tarjeta-sellos-titulo { font-family: var(--fuente-titulo); font-size: 1.35rem; }
+.tarjeta-sellos .progreso-cifra { color: var(--dorado-claro); }
+.tarjeta-sellos .progreso-texto { color: rgba(255, 255, 255, 0.85); font-size: 0.9rem; }
+.sellos { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 0.9rem 0; }
+.sello {
+  width: 2.8rem; height: 2.8rem; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1.5px dashed rgba(212, 180, 131, 0.6);
+  color: rgba(255, 255, 255, 0.5); font-size: 0.9rem;
+}
+.sello.lleno { border: 2px solid var(--dorado-claro); background: rgba(212, 180, 131, 0.18); font-size: 1.3rem; }
+.sellos-fila { display: inline-flex; gap: 3px; }
+.sello-chico { width: 0.7rem; height: 0.7rem; border-radius: 50%; border: 1.5px solid var(--dorado); }
+.sello-chico.lleno { background: var(--dorado); }
+
+/* IA en promociones */
+.caja-ia {
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  border: 1.5px solid #d9c9f0;
+  background: linear-gradient(120deg, #f7f2ff, #fbf7f0);
+}
+.caja-ia-titulo { font-weight: 600; color: #4b2d7f; }
+.btn-ia {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.55rem 1.3rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(120deg, #6b46c1, #b08d57);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.btn-ia:hover { transform: translateY(-2px); }
+.btn-ia:disabled { opacity: 0.6; transform: none; }
+.caja-ia-porque { margin: 0.8rem 0 0; font-size: 0.9rem; color: #4b2d7f; }
+
+/* Clima */
+.clima-reserva {
+  display: flex; align-items: center; gap: 0.7rem;
+  margin: 0.4rem 0 0.2rem; padding: 0.7rem 1rem;
+  border-radius: 12px; background: #eaf3fa; color: var(--azul-marea); font-size: 0.9rem;
+}
+.clima-icono { font-size: 1.5rem; line-height: 1; }
+.clima-noche {
+  background: var(--espuma); border-radius: var(--radio); box-shadow: var(--sombra);
+  padding: 1rem 1.2rem; margin-bottom: 1.4rem;
+}
+.clima-noche-cabecera { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; flex-wrap: wrap; color: var(--azul-marea); }
+.clima-consejo { font-size: 0.85rem; font-weight: 600; border-radius: 999px; padding: 0.3rem 0.9rem; }
+.clima-bien { background: #e6f2eb; color: #24513a; }
+.clima-regular { background: #fff4d9; color: #7a5a12; }
+.clima-mal { background: #fbe9e5; color: #8a2f1e; }
+.clima-horas { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.6rem; margin-top: 0.8rem; }
+.clima-hora {
+  display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
+  padding: 0.6rem 0.3rem; border-radius: 12px; background: var(--arena-clara); text-align: center;
+}
+.clima-hora-nombre { font-size: 0.8rem; font-weight: 600; color: var(--gris-suave); }
+.clima-temp { font-family: var(--fuente-titulo); font-size: 1.4rem; color: var(--azul-marea); line-height: 1; }
+@media (max-width: 576px) {
+  .clima-horas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .sello { width: 2.4rem; height: 2.4rem; }
 }

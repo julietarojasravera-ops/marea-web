@@ -42,24 +42,26 @@ Proyecto académico — Incorporación Estratégica · Universidad ORT Uruguay.
 
 ## Qué hace (Parte B — fidelización)
 
-La Parte B no agrega infraestructura: usa los mismos datos de Supabase, suma un paso de **segmentación** y reutiliza el webhook de Make.
+La Parte B usa los mismos datos de Supabase, suma un paso de **segmentación**, reutiliza el webhook de Make y agrega **IA** para escribir promociones. Todo sale de las reservas: en la demo no hay que cargar nada a mano.
 
 ```
 Datos almacenados en Supabase ──► Segmentación de clientes ──► Make ──► Acciones de fidelización
-(visitas, gasto, cumpleaños,       (RFM: recencia, frecuencia,           (cumpleaños, reactivación,
- preferencias, permiso)              monto)                               gasto, promociones)
+(visitas, cumpleaños,              (recencia + frecuencia        ▲       (cumpleaños, reactivación,
+ preferencias, permiso)             + preferencias)              │        tarjeta de visitas, promociones)
+                                          │                      │
+                                          └──► IA (Claude) sugiere el texto de cada promoción
 ```
 
-**Datos nuevos**
-- El admin anota el **total de la cuenta** al liberar la mesa (o después, con "Anotar cuenta").
-- El cliente puede dar su **fecha de cumpleaños** (opcional) y elegir si **acepta recibir promociones** (Ley 18.331). Lo cambia cuando quiere desde *Mis reservas → Mis datos*.
+**Datos**
+- Las **visitas se cuentan solas**: una reserva sentada o completada (o confirmada de un día que ya pasó) es una visita.
+- El cliente puede dar su **fecha de cumpleaños** (opcional) y elegir si **acepta recibir promociones** (Ley 18.331). Lo cambia cuando quiere desde **Mi perfil**.
 - Las preferencias se calculan solas: zona favorita, día y horario habitual, tamaño del grupo y ocasiones.
 
-**Segmentos (modelo RFM, reglas editables desde el panel)**
+**Segmentos (recencia y frecuencia, reglas editables desde el panel)**
 
 | Segmento | Regla inicial |
 |---|---|
-| VIP | 6+ visitas o $ 40.000+ de gasto en el último año |
+| VIP | 6+ visitas en el último año |
 | Frecuente | 3+ visitas en el último año |
 | Nuevo | 0 a 2 visitas |
 | En riesgo | 60+ días sin venir y sin reserva próxima |
@@ -71,12 +73,20 @@ Datos almacenados en Supabase ──► Segmentación de clientes ──► Make
 |---|---|---|
 | 🎂 Cumpleaños | 7 días antes, una vez por año | Postre de regalo para toda la mesa |
 | 🌊 Reactivación | al pasar a En riesgo o Inactivo, una vez por ausencia | 15 % de descuento en la próxima cena |
-| 🍷 Beneficio por gasto | cada $ 20.000 de gasto acumulado | Una botella de vino de la casa |
-| ✨ Promoción | el admin la lanza filtrando por segmento, zona favorita y si vienen en pareja o en grupo | cupón opcional |
+| 🍷 Tarjeta de visitas | cada 5 visitas (un sello por visita) | Una botella de vino de la casa |
+| ✨ Promoción | el admin la lanza filtrando por segmento, zona favorita y si vienen en pareja o en grupo; **la IA sugiere nombre, asunto, mensaje y beneficio** | cupón opcional |
 
-- Cumpleaños y reactivación se revisan **todos los días a las 10:00** (Supabase Cron). El beneficio por gasto se entrega **en el momento** en que se anota la cuenta.
-- El cliente ve sus cupones y cuánto le falta para el próximo regalo en **Mis beneficios**.
+- Cumpleaños y reactivación se revisan **todos los días a las 10:00** (Supabase Cron). El premio de la tarjeta se entrega **en el momento** en que el admin sienta al grupo o libera la mesa.
+- El cliente ve sus cupones y su **tarjeta de sellos** en **Mis beneficios**.
 - En el panel, la pestaña **Fidelización** muestra los segmentos, la lista de clientes con sus preferencias y su cumpleaños, el **canje de cupones**, las reglas, el botón *Ejecutar ahora*, las promociones enviadas y cuántos cupones se usaron.
+
+## Integraciones con APIs externas
+
+| API | Para qué | Cómo |
+|---|---|---|
+| **Anthropic (Claude Haiku 4.5)** | Sugerir promociones según el público elegido | Supabase Edge Function `sugerir-promocion`. La clave está en los *Secrets* de Supabase. A la IA solo le llegan **totales anónimos** (nunca nombres ni correos). Solo admins, máximo 30 por día. |
+| **Open-Meteo** (clima) | Pronóstico para el día y la hora de la reserva (cliente) y clima de la noche con un consejo para el servicio (admin) | Llamada directa desde el sitio. Es gratis y sin clave, así que no hay nada secreto en el navegador. |
+| **Make + Gmail** | Correos de reservas, alertas, beneficios y promociones | Webhook con secreto compartido |
 
 ## Tiempos de mesa (como los sistemas profesionales)
 
@@ -109,6 +119,9 @@ Inspirado en cómo trabajan OpenTable, Resy o SevenRooms:
 | Base de datos | Supabase / PostgreSQL |
 | Autenticación | Supabase Auth |
 | Automatización de correos | Make (webhook + Gmail) |
+| Tareas programadas | Supabase Cron (pg_cron) |
+| IA | Anthropic Claude (Supabase Edge Function) |
+| Clima | Open-Meteo |
 | Versionado | GitHub |
 
 > **Make en lugar de n8n:** cumple el mismo rol de automatización y su plan gratuito no vence,
@@ -161,7 +174,9 @@ Navegador ──► Vercel (sitio) ──► Supabase (Auth + API + PostgreSQL)
 | `sql-6-plano-y-alternativas.sql` | Forma y ubicación de las mesas, estado de cada mesa, elegir mesa y horarios alternativos |
 | `sql-7-profesional.sql` | 20 mesas con zonas, mesa justa por grupo, ocasión y comentarios, teléfono del cliente |
 | `sql-8-invitaciones-admin.sql` | Invitaciones de administradores (enlace único, cifrado, 48 h) y auditoría de roles |
-| `sql-9-fidelizacion.sql` | **Parte B:** gasto, cumpleaños, permiso de promociones, segmentación RFM, cupones, promociones, correos y tarea diaria |
+| `sql-9-fidelizacion.sql` | **Parte B:** cumpleaños, permiso de promociones, segmentación, tarjeta de visitas, cupones, promociones, correos, tarea diaria y resumen anónimo para la IA |
+| `sugerir-promocion.ts` | Supabase Edge Function que pide la sugerencia a Claude (se pega en Supabase, no va en Vercel) |
+| `clima.js` | Pronóstico del clima (Open-Meteo) en Reservar y en el Dashboard |
 | `sql-10-datos-demo-fidelizacion.sql` | Opcional: 13 clientes de prueba con historial, para mostrar los segmentos en la demo |
 | `diagramas/` | Arquitectura, flujo de usuario y MER (Parte A) · flujo y MER de la Parte B |
 
@@ -180,10 +195,10 @@ Relaciones: USUARIO 1 — N RESERVA · MESA 1 — N RESERVA.
 ## Modelo de datos (Parte B)
 
 - **usuario** suma `acepta_promociones` y `fecha_acepta_promociones` (usa `fecha_nacimiento`)
-- **reserva** suma `gasto` (total de la cuenta)
 - **beneficio** (id_beneficio, codigo único, id_usuario → usuario, tipo, descripcion, periodo, id_campana → campana, vence_en, usado_en, usado_por → usuario, correo_enviado)
 - **campana** (id_campana, nombre, segmento, zona, grupo, asunto, mensaje, beneficio, vence_en, destinatarios, creada_por → usuario)
 - **ajustes_fidelizacion** (reglas de segmentos y beneficios, una sola fila)
+- **uso_ia** (id, id_usuario → usuario, fecha): registro de cada sugerencia de IA, para el tope diario
 - La **segmentación no se guarda**: la calcula la función `datos_clientes()`, así siempre está al día.
 
 Relaciones: USUARIO 1 — N BENEFICIO · CAMPANA 1 — N BENEFICIO.
@@ -211,6 +226,7 @@ Relaciones: USUARIO 1 — N BENEFICIO · CAMPANA 1 — N BENEFICIO.
 | Redirección después del login solo a páginas del propio sitio | Enlaces que mandan a sitios falsos (open redirect) |
 | Correos de promociones solo con permiso explícito (opt-in) y enlace para darse de baja | Ley 18.331 y correo no deseado |
 | Cupones únicos, con vencimiento, de un solo uso, y solo un admin los canjea | Que un cupón se use dos veces o se invente |
+| Clave de la IA solo en el servidor (Secrets de Supabase) · a la IA van solo datos anónimos · solo admins · tope de 30 por día | Robo de la clave, fuga de datos personales, gasto descontrolado |
 | Funciones de fidelización internas sin permiso externo · texto de promociones escapado | Cupones o correos creados desde afuera, inyección de HTML |
 
 **Mejoras futuras:** auditoría de cambios en reservas y verificación en dos pasos (MFA) para los administradores.

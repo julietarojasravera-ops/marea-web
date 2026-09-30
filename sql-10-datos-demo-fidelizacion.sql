@@ -1,6 +1,6 @@
 -- =========================================================
 -- PARTE B — Datos de DEMOSTRACIÓN (opcional)
--- Crea 13 clientes de prueba con historial de visitas y gastos,
+-- Crea 13 clientes de prueba con historial de visitas,
 -- para que la segmentación tenga datos el día de la presentación.
 -- Cómo usarlo: SQL Editor > New query > pegar todo > Run
 -- (correr DESPUÉS de sql-9)
@@ -21,21 +21,21 @@ declare
 begin
   for c in
     select * from (values
-      -- nombre,                 mesa, personas, visitas, cada (días), última (hace días), $ por persona, cumple en (días)
-      ('Martina Castro',          1,    2,        9,       30,          8,                  2400,          5),
-      ('Federico Méndez',        15,    8,        5,       50,         12,                  2200,        140),
-      ('Lucía Fernández',         7,    4,        4,       45,         20,                  2100,         20),
-      ('Santiago Silva',          3,    2,        3,       60,         15,                  2600,         80),
-      ('Valentina Rodríguez',    18,    6,        3,       40,         25,                  1900,        200),
-      ('Joaquín Pereira',         9,    3,        1,       30,         10,                  2000,        300),
-      ('Mateo González',         11,    4,        1,       30,         30,                  1800,         45),
-      ('Camila López',            2,    2,        0,       30,          0,                     0,         60),
-      ('Sofía Martínez',          4,    2,        4,       30,         75,                  2300,        110),
-      ('Diego Suárez',           12,    4,        2,       40,         95,                  2000,        250),
-      ('Florencia Díaz',         19,    6,        3,       60,        200,                  1700,         15),
-      ('Nicolás Romero',         16,    8,        1,       30,        260,                  2100,        330),
-      ('Agustina Torres',         5,    2,        2,       50,        170,                  2500,         95)
-    ) as t(nombre, mesa, personas, visitas, cada, ultima, pp, cumple_en)
+      -- nombre,                 mesa, personas, visitas, cada (días), última (hace días), cumple en (días)
+      ('Martina Castro',          1,    2,        9,       30,          8,          5),
+      ('Federico Méndez',        15,    8,        7,       40,         12,        140),
+      ('Lucía Fernández',         7,    4,        4,       45,         20,         20),
+      ('Santiago Silva',          3,    2,        4,       45,         15,         80),
+      ('Valentina Rodríguez',    18,    6,        3,       40,         25,        200),
+      ('Joaquín Pereira',         9,    3,        1,       30,         10,        300),
+      ('Mateo González',         11,    4,        1,       30,         30,         45),
+      ('Camila López',            2,    2,        0,       30,          0,         60),
+      ('Sofía Martínez',          4,    2,        4,       30,         75,        110),
+      ('Diego Suárez',           12,    4,        2,       40,         95,        250),
+      ('Florencia Díaz',         19,    6,        3,       60,        200,         15),
+      ('Nicolás Romero',         16,    8,        1,       30,        260,        330),
+      ('Agustina Torres',         5,    2,        2,       50,        170,         95)
+    ) as t(nombre, mesa, personas, visitas, cada, ultima, cumple_en)
   loop
     v_id := gen_random_uuid();
     insert into auth.users (instance_id, id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
@@ -56,11 +56,10 @@ begin
     select id_mesa into v_mesa from public.mesa where numero = c.mesa;
     for i in 0 .. c.visitas - 1 loop
       v_fecha := public.hoy_uy() - c.ultima - i * c.cada;
-      insert into public.reserva (id_usuario, id_mesa, fecha, hora, cantidad_personas, estado, gasto, ocasion)
+      insert into public.reserva (id_usuario, id_mesa, fecha, hora, cantidad_personas, estado, ocasion)
       values (v_id, v_mesa, v_fecha,
               case when i % 2 = 0 then time '20:00' else time '21:30' end,
               c.personas, 'completada',
-              c.personas * c.pp + ((i * 37) % 9 - 4) * 150,
               case when i = 0 and c.cumple_en < 30 then 'cumpleaños'
                    when i = 1 and c.personas = 2 then 'aniversario'
                    when i = 0 and c.personas = 8 then 'celebración' end);
@@ -69,7 +68,7 @@ begin
 end $$;
 
 -- Ver cómo quedaron segmentados (desde el SQL Editor)
-select nombre, segmento, visitas, gasto_total, dias_sin_venir, zona_favorita
+select nombre, segmento, visitas, visitas_12m, dias_sin_venir, zona_favorita
   from public.datos_clientes()
  where email like '%@demo.marea.test'
  order by segmento, nombre;
