@@ -1419,3 +1419,13 @@ a { color: var(--azul-ola); }
   .clima-horas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .sello { width: 2.4rem; height: 2.4rem; }
 }
+
+/* Quiénes reciben la promoción */
+.destinatarios { margin-top: 0.5rem; font-size: 0.9rem; }
+.destinatarios summary { cursor: pointer; color: var(--azul-ola); font-weight: 600; }
+.destinatarios-lista { list-style: none; padding: 0; margin: 0.5rem 0 0; max-height: 240px; overflow-y: auto; border: 1px solid #efe8da; border-radius: 12px; }
+.destinatarios-lista li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.6rem; padding: 0.5rem 0.8rem; border-top: 1px solid #efe8da; }
+.destinatarios-lista li:first-child { border-top: 0; }
+.destinatarios-lista .recibe { margin-left: auto; color: var(--verde-alga); font-weight: 600; font-size: 0.8rem; }
+.destinatarios-lista .no-recibe { margin-left: auto; color: var(--gris-suave); font-size: 0.8rem; }
+.destinatarios-lista .sin-permiso .celda-principal { color: var(--gris-suave); }

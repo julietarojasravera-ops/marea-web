@@ -283,6 +283,27 @@ async function actualizarAlcance() {
       (data.sin_permiso ? ` · ${data.sin_permiso} más coinciden pero no aceptaron correos.` : ".")
     : "Ningún cliente coincide con estos filtros.";
   caja.dataset.destinatarios = data.destinatarios;
+  pintarDestinatarios(v);
+}
+
+// Lista de quiénes reciben la promoción (mismas reglas que la base de datos)
+function coincideConPublico(c, v) {
+  return (!v.segmento || c.segmento === v.segmento)
+    && (!v.zona || c.zona_favorita === v.zona)
+    && (!v.grupo || (v.grupo === "pareja" ? c.grupo_habitual <= 2 : c.grupo_habitual >= 4));
+}
+
+function pintarDestinatarios(v) {
+  const lista = clientesFide.filter((c) => coincideConPublico(c, v))
+    .sort((a, b) => Number(b.acepta_promociones) - Number(a.acepta_promociones) || (a.nombre || "").localeCompare(b.nombre || ""));
+  const caja = document.getElementById("camp-lista");
+  document.getElementById("camp-destinatarios").classList.toggle("oculto", !lista.length);
+  caja.innerHTML = lista.map((c) => `
+    <li class="${c.acepta_promociones ? "" : "sin-permiso"}">
+      <span class="celda-principal">${esc(c.nombre || "Sin nombre")}</span>
+      <span class="celda-secundaria">${esc(c.email)}</span>
+      <span class="${c.acepta_promociones ? "recibe" : "no-recibe"}">${c.acepta_promociones ? "✓ recibe el correo" : "no aceptó correos"}</span>
+    </li>`).join("");
 }
 ["camp-segmento", "camp-zona", "camp-grupo"].forEach((id) =>
   document.getElementById(id).addEventListener("change", actualizarAlcance));
