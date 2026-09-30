@@ -66,6 +66,7 @@ async function pintarMenu() {
     <a href="reservar.html">Reservar</a>
     <a href="mis-reservas.html">Mis reservas</a>
     ${esAdmin ? '<a href="admin.html">Panel</a>' : ""}
+    <a href="perfil.html" class="enlace-perfil">Mi perfil</a>
     <button type="button" class="enlace-boton" id="btn-salir">Salir</button>`;
   document.getElementById("btn-salir").addEventListener("click", cerrarSesion);
 }
@@ -214,4 +215,37 @@ db.auth.onAuthStateChange((evento) => {
   }
 });
 
-document.addEventListener("DOMContentLoaded", pintarMenu);
+// Marca en el menú la página en la que estás
+function marcarPaginaActual() {
+  const actual = location.pathname.split("/").pop() || "index.html";
+  document.querySelectorAll("#menu a").forEach((a) => {
+    if (a.getAttribute("href") === actual) a.setAttribute("aria-current", "page");
+  });
+}
+
+// En celulares el menú se abre con un botón (hay muchos enlaces)
+function prepararMenuCelular() {
+  const menu = document.getElementById("menu");
+  if (!menu || document.getElementById("btn-menu")) return;
+  const boton = document.createElement("button");
+  boton.type = "button";
+  boton.id = "btn-menu";
+  boton.className = "btn-menu";
+  boton.setAttribute("aria-controls", "menu");
+  boton.setAttribute("aria-expanded", "false");
+  boton.innerHTML = '<span class="btn-menu-rayas" aria-hidden="true"></span><span class="visually-hidden">Abrir menú</span>';
+  menu.before(boton);
+  boton.addEventListener("click", () => {
+    const abierto = menu.classList.toggle("abierto");
+    boton.setAttribute("aria-expanded", String(abierto));
+  });
+  menu.addEventListener("click", (e) => {
+    if (e.target.closest("a, button")) menu.classList.remove("abierto");
+  });
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  prepararMenuCelular();
+  await pintarMenu();
+  marcarPaginaActual();
+});

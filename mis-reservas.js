@@ -137,35 +137,6 @@ async function cargarBeneficios() {
   barra.value = avance;
 }
 
-// ---------- Mis datos ----------
-async function cargarMisDatos() {
-  const { data, error } = await db.from("usuario")
-    .select("fecha_nacimiento, acepta_promociones").eq("id_usuario", idUsuario).single();
-  if (error) { document.getElementById("form-datos").classList.add("oculto"); return; }
-  document.getElementById("dato-nacimiento").value = data.fecha_nacimiento || "";
-  document.getElementById("dato-promociones").checked = !!data.acepta_promociones;
-}
-
-document.getElementById("dato-nacimiento").max = hoyISO();
-document.getElementById("form-datos").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const boton = e.target.querySelector("button[type=submit]");
-  const nacimiento = document.getElementById("dato-nacimiento").value || null;
-  if (nacimiento && (nacimiento > hoyISO() || nacimiento < "1900-01-01")) {
-    mostrarAviso("aviso-mis", "error", "Revisá la fecha de cumpleaños.");
-    return;
-  }
-  boton.disabled = true;
-  const { error } = await db.from("usuario").update({
-    fecha_nacimiento: nacimiento,
-    acepta_promociones: document.getElementById("dato-promociones").checked,
-  }).eq("id_usuario", idUsuario);
-  boton.disabled = false;
-  if (error) { mostrarAviso("aviso-mis", "error", mensajeDeError(error)); return; }
-  mostrarAviso("aviso-mis", "ok", "Guardamos tus datos.");
-  cargarBeneficios();
-});
-
 (async () => {
   const acceso = await requerirSesion();
   if (!acceso) return;
@@ -174,5 +145,4 @@ document.getElementById("form-datos").addEventListener("submit", async (e) => {
   if (nombre) document.getElementById("saludo").textContent = `Hola, ${nombre}. Estas son tus reservas.`;
   cargarReservas();
   cargarBeneficios();
-  cargarMisDatos();
 })();

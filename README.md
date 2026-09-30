@@ -2,6 +2,7 @@
 
 Aplicación web para que un restaurante gestione **reservas, mesas y clientes** desde un único sistema.
 Marea tiene **20 mesas y 84 lugares** en cuatro zonas: ventanal al mar, salón, barra y fondo.
+📍 Rambla Lorenzo Batlle Pacheco, Parada 8, Playa Brava, Punta del Este, Maldonado, Uruguay.
 Proyecto académico — Incorporación Estratégica · Universidad ORT Uruguay.
 
 🔗 **Demo online:** https://marea-web-sooty.vercel.app
@@ -19,6 +20,7 @@ Proyecto académico — Incorporación Estratégica · Universidad ORT Uruguay.
 
 **Cliente**
 - Se registra (nombre, teléfono, correo) e inicia sesión; puede recuperar o cambiar su contraseña.
+- En **Mi perfil** ve si es cliente o administrador y edita su nombre, teléfono, cumpleaños y el permiso de promociones.
 - Consulta disponibilidad por fecha, horario y cantidad de personas, viendo el **plano del local** con las mesas libres y ocupadas.
 - Puede **elegir su mesa** en el plano (o dejar que el sistema asigne la mejor). Solo puede elegir mesas **justas para su grupo**: 4 personas → mesa de 4; 5 personas → mesa de 6 (nunca una de 8).
 - Puede indicar una **ocasión especial** (cumpleaños, aniversario, negocios…) y **comentarios** (alergias, silla de bebé).
@@ -137,6 +139,7 @@ Navegador ──► Vercel (sitio) ──► Supabase (Auth + API + PostgreSQL)
 | `nueva-clave.html` / `nueva-clave.js` | Crear contraseña nueva desde el enlace del correo |
 | `reservar.html` / `reservar.js` | Consulta de disponibilidad y reserva |
 | `mis-reservas.html` / `mis-reservas.js` | Reservas del cliente |
+| `perfil.html` / `perfil.js` | Mi perfil: rol (cliente o administrador), nombre, teléfono, cumpleaños y correos de promociones |
 | `admin.html` / `admin.js` | Panel: Dashboard, Reservas, Mesas, Clientes |
 | `admin-salon.js` | Salón en vivo, línea de tiempo y próximas llegadas del panel |
 | `admin-equipo.js` | Pestaña Equipo: administradores, invitaciones y auditoría |

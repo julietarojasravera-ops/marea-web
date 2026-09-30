@@ -1246,3 +1246,100 @@ a { color: var(--azul-ola); }
 @media (max-width: 576px) { .cupon-codigo { align-items: flex-start; } }
 .cupon-cuerpo { flex: 1 1 220px; min-width: 0; }
 .cupon-codigo { flex: 0 0 auto; }
+
+/* =========================================================
+   MI PERFIL
+   ========================================================= */
+.banner-perfil { background-image: linear-gradient(180deg, rgba(8, 28, 48, 0.72), rgba(8, 28, 48, 0.55)), url("img-barra.jpg"); background-position: center 40%; }
+.perfil-cabecera { display: flex; align-items: center; gap: 1.1rem; }
+.perfil-avatar {
+  flex: 0 0 auto;
+  width: 4.2rem; height: 4.2rem; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--azul-marea); color: var(--arena);
+  font-family: var(--fuente-titulo); font-size: 2rem;
+  border: 3px solid var(--dorado-claro);
+}
+.perfil-nombre { font-family: var(--fuente-titulo); font-size: 1.9rem; font-weight: 600; color: var(--azul-marea); line-height: 1.1; }
+.perfil-etiquetas { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; margin-top: 0.5rem; }
+.rol-etiqueta { display: inline-block; border-radius: 999px; padding: 0.25rem 0.85rem; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em; }
+.rol-cliente { background: #e8eef5; color: var(--azul-marea); }
+.rol-admin { background: var(--azul-marea); color: var(--dorado-claro); }
+.perfil-rol-texto { margin: 1rem 0 0; padding: 0.8rem 1rem; border-radius: 12px; background: var(--arena-clara); color: var(--tinta); font-size: 0.92rem; }
+.perfil-guardado {
+  color: var(--verde-alga);
+  font-weight: 600;
+  background: #e6f2eb;
+  border-radius: 999px;
+  padding: 0.45rem 1rem;
+  animation: aparecer 0.3s ease;
+}
+@keyframes aparecer { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+.perfil-accesos { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.8rem; }
+.acceso {
+  display: flex; flex-direction: column; gap: 0.2rem;
+  padding: 0.9rem 1rem; border: 1px solid #efe8da; border-radius: 12px;
+  text-decoration: none; transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.acceso:hover { border-color: var(--dorado); transform: translateY(-2px); }
+.acceso-titulo { font-weight: 600; color: var(--azul-marea); }
+.aviso-perfil-enlace {
+  display: block; margin-top: 2rem; padding: 0.9rem 1.1rem; border-radius: 12px;
+  background: var(--arena-clara); color: var(--tinta); text-decoration: none; font-size: 0.92rem;
+}
+.aviso-perfil-enlace b { color: var(--azul-marea); }
+.aviso-perfil-enlace:hover b { text-decoration: underline; }
+
+/* Dirección */
+.enlace-mapa { display: inline-block; margin-top: 0.4rem; color: var(--azul-ola); font-weight: 600; font-size: 0.9rem; text-decoration: none; }
+.enlace-mapa:hover { text-decoration: underline; }
+.pie-direccion { max-width: 520px; }
+
+/* Página actual en el menú */
+.nav-enlaces a[aria-current="page"] { opacity: 1; color: var(--dorado-claro); }
+.nav-enlaces a[href="reservar.html"][aria-current="page"] { background: var(--dorado-claro); color: var(--azul-noche); }
+
+/* Menú en celulares: se abre con un botón */
+.btn-menu { display: none; }
+@media (max-width: 767px) {
+  .nav-marea { position: relative; }
+  .nav-marea.sobre-hero { position: fixed; }
+  .btn-menu {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 2.6rem; height: 2.6rem; border-radius: 50%;
+    background: transparent; border: 1px solid rgba(255, 255, 255, 0.45);
+  }
+  .btn-menu-rayas, .btn-menu-rayas::before, .btn-menu-rayas::after {
+    display: block; width: 1.1rem; height: 2px; background: var(--espuma); position: relative; content: "";
+  }
+  .btn-menu-rayas::before { position: absolute; top: -6px; }
+  .btn-menu-rayas::after { position: absolute; top: 6px; }
+  .btn-menu[aria-expanded="true"] { background: var(--dorado-claro); border-color: var(--dorado-claro); }
+  .btn-menu[aria-expanded="true"] .btn-menu-rayas,
+  .btn-menu[aria-expanded="true"] .btn-menu-rayas::before,
+  .btn-menu[aria-expanded="true"] .btn-menu-rayas::after { background: var(--azul-noche); }
+  #menu.nav-enlaces {
+    display: none;
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    right: 12px;
+    min-width: 220px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0.5rem;
+    background: var(--azul-noche);
+    border: 1px solid rgba(212, 180, 131, 0.3);
+    border-radius: 14px;
+    box-shadow: 0 20px 40px -18px rgba(0, 0, 0, 0.7);
+    z-index: 40;
+  }
+  #menu.nav-enlaces.abierto { display: flex; }
+  #menu.nav-enlaces a, #menu .enlace-boton {
+    font-size: 1rem; padding: 0.75rem 1rem; border-radius: 10px; text-align: left; white-space: nowrap;
+  }
+  #menu.nav-enlaces a:hover, #menu .enlace-boton:hover { background: rgba(255, 255, 255, 0.06); }
+  #menu.nav-enlaces a[href="reservar.html"] { margin-bottom: 0.3rem; text-align: center; }
+  .perfil-nombre { font-size: 1.5rem; }
+  .perfil-avatar { width: 3.4rem; height: 3.4rem; font-size: 1.6rem; }
+}
