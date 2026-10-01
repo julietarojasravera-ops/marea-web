@@ -55,6 +55,7 @@ document.querySelectorAll("[data-seccion]").forEach((boton) => {
     if (boton.dataset.seccion === "clientes") cargarClientesTabla();
     if (boton.dataset.seccion === "equipo") cargarEquipo();
     if (boton.dataset.seccion === "fidelizacion") cargarFidelizacion();
+    if (boton.dataset.seccion === "clima") cargarClimaPersonal();
   });
 });
 
@@ -95,6 +96,8 @@ document.getElementById("btn-actualizar").addEventListener("click", () => { carg
 
 async function cargarDashboard() {
   if (typeof pintarClimaNoche === "function") pintarClimaNoche(dashFecha.value);
+  if (typeof pintarPersonalNoche === "function") pintarPersonalNoche(dashFecha.value);
+  if (typeof pintarInvitarHoy === "function") pintarInvitarHoy(dashFecha.value);
   const { data, error } = await db
     .from("reserva")
     .select("id_reserva, id_usuario, id_mesa, fecha, hora, cantidad_personas, estado, duracion_min, limpieza_min, ocasion, comentarios, usuario(nombre, email, telefono), mesa(numero, zona)")

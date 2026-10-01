@@ -84,6 +84,7 @@ const NOMBRES_BENEFICIO = {
   reactivacion: "🌊 Te extrañamos",
   visitas: "🍷 Tarjeta de visitas completa",
   campana: "✨ Promoción",
+  bienvenida: "🥂 Bienvenida a los beneficios",
 };
 
 function estadoBeneficio(b) {
@@ -144,4 +145,5 @@ async function cargarBeneficios() {
   if (nombre) document.getElementById("saludo").textContent = `Hola, ${nombre}. Estas son tus reservas.`;
   cargarReservas();
   cargarBeneficios();
+  pintarIncentivoCorreos("incentivo-correos", () => setTimeout(cargarBeneficios, 600));
 })();

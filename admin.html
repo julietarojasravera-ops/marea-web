@@ -35,6 +35,7 @@
           <button type="button" class="pestana" data-seccion="reservas">Reservas</button>
           <button type="button" class="pestana" data-seccion="mesas">Mesas</button>
           <button type="button" class="pestana" data-seccion="clientes">Clientes</button>
+          <button type="button" class="pestana" data-seccion="clima">Clima y personal</button>
           <button type="button" class="pestana" data-seccion="fidelizacion">Fidelización</button>
           <button type="button" class="pestana" data-seccion="equipo">Equipo</button>
         </div>
@@ -63,6 +64,10 @@
 
         <!-- Pronóstico del clima para la noche (API de Open-Meteo) -->
         <div id="clima-noche" class="clima-noche oculto" aria-live="polite"></div>
+        <!-- Personal sugerido según el clima y el historial -->
+        <div id="personal-noche" class="personal-noche oculto" aria-live="polite"></div>
+        <!-- Clientes sin correos que vienen ese día -->
+        <div id="invitar-hoy" class="tarjeta invitar-hoy oculto"></div>
 
         <!-- Indicadores -->
         <div class="row g-3">
@@ -393,6 +398,86 @@
           </table>
         </div>
       </section>
+      <!-- ================= CLIMA Y PERSONAL ================= -->
+      <section id="sec-clima" class="seccion-admin oculto">
+        <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-3">
+          <div>
+            <h2 class="grupo-titulo my-0">Clima y personal</h2>
+            <p class="pagina-bajada mb-0">Cómo cambia la cantidad de gente según el clima, y cuántos mozos conviene poner.
+              Las ventas se miden en <b>cubiertos</b> (personas atendidas).</p>
+            <p class="celda-secundaria mb-0" id="clima-estado"></p>
+          </div>
+          <button type="button" class="btn-borde" id="btn-recargar-clima">↻ Actualizar</button>
+        </div>
+
+        <!-- Previsión -->
+        <div class="tarjeta">
+          <h2 class="grupo-titulo mt-0">Personal para los próximos días</h2>
+          <p class="pagina-bajada">Se esperan los cubiertos de noches parecidas (mismo día de la semana y mismo clima),
+            o lo ya reservado si es más. Anotá los mozos que vas a poner: queda en el historial.</p>
+          <div class="tabla-simple">
+            <table class="table tabla-marea align-middle mb-0">
+              <thead><tr><th>Día</th><th>Clima de la noche</th><th>Reservado</th><th>Cubiertos esperados</th><th>Mozos sugeridos</th><th>Mozos asignados</th></tr></thead>
+              <tbody id="tabla-prevision"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Análisis -->
+        <div class="row g-4 mt-1">
+          <div class="col-xl-7">
+            <div class="tarjeta h-100">
+              <h2 class="grupo-titulo mt-0">¿Cómo afecta el clima a los cubiertos?</h2>
+              <div class="indicadores-cupon indicadores-clima" id="indicadores-clima"></div>
+              <div class="leyenda-grafico">
+                <span><i class="muestra barra-finde"></i>Viernes y sábado</span>
+                <span><i class="muestra barra-semana"></i>Martes a jueves y domingo</span>
+              </div>
+              <div id="grafico-clima-barras"></div>
+              <p class="conclusion-clima mb-0" id="conclusion-clima"></p>
+            </div>
+          </div>
+          <div class="col-xl-5">
+            <div class="tarjeta h-100">
+              <h2 class="grupo-titulo mt-0">Temperatura y cubiertos, noche por noche</h2>
+              <div class="leyenda-grafico">
+                <span><i class="muestra punto-finde"></i>Vie y sáb</span>
+                <span><i class="muestra punto-semana"></i>Otros días</span>
+                <span><i class="muestra punto-lluvia"></i>Con lluvia</span>
+              </div>
+              <div id="grafico-clima-puntos"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Noches anteriores + regla -->
+        <div class="row g-4 mt-1">
+          <div class="col-xl-8">
+            <div class="tarjeta h-100">
+              <h2 class="grupo-titulo mt-0">Noches anteriores</h2>
+              <p class="pagina-bajada">Cargá cuántos mozos trabajaron. Así el sistema aprende cuántos cubiertos atiende cada uno.</p>
+              <div class="tabla-simple">
+                <table class="table tabla-marea align-middle mb-0">
+                  <thead><tr><th>Día</th><th>Clima de la noche</th><th>Cubiertos</th><th>Mozos</th><th>Cubiertos por mozo</th></tr></thead>
+                  <tbody id="tabla-noches"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="col-xl-4">
+            <form class="tarjeta h-100" id="form-ajustes-personal">
+              <h2 class="grupo-titulo mt-0">Regla de personal</h2>
+              <p class="pagina-bajada">Mozos sugeridos = cubiertos esperados ÷ cubiertos por mozo (redondeado hacia arriba).</p>
+              <label class="form-label" for="aj-cubiertos-mozo">Cubiertos que atiende cada mozo</label>
+              <input class="form-control mb-3" type="number" id="aj-cubiertos-mozo" min="5" max="60" required>
+              <label class="form-label" for="aj-mozos-min">Mozos mínimos por noche</label>
+              <input class="form-control mb-3" type="number" id="aj-mozos-min" min="1" max="20" required>
+              <button type="submit" class="btn-marea oscuro">Guardar regla</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
       <!-- ================= FIDELIZACIÓN (PARTE B) ================= -->
       <section id="sec-fidelizacion" class="seccion-admin oculto">
         <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-3">
@@ -520,6 +605,18 @@
               <div class="form-check consentimiento">
                 <input class="form-check-input" type="checkbox" id="regla-automatico">
                 <label class="form-check-label" for="regla-automatico">Enviar las acciones automáticas todos los días</label>
+              </div>
+            </div>
+            <div class="col-12"><div class="subtitulo-tiempos mt-2">Clientes que no aceptaron correos</div></div>
+            <div class="col-md-6">
+              <label class="form-label" for="regla-ben-bienvenida">🥂 Regalo de bienvenida al sumarse</label>
+              <input class="form-control" type="text" id="regla-ben-bienvenida" minlength="3" maxlength="120" required>
+              <div class="ayuda-campo">Se entrega una sola vez, cuando el cliente acepta recibir correos.</div>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+              <div class="form-check consentimiento">
+                <input class="form-check-input" type="checkbox" id="regla-aviso-sin-correos">
+                <label class="form-check-label" for="regla-aviso-sin-correos">Avisarme por correo cuando reserva alguien sin correos</label>
               </div>
             </div>
           </div>
@@ -688,5 +785,6 @@
   <script src="admin-salon.js"></script>
   <script src="admin-equipo.js"></script>
   <script src="admin-fidelizacion.js"></script>
+  <script src="admin-personal.js"></script>
 </body>
 </html>

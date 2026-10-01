@@ -24,6 +24,7 @@ function mostrarPestana(cual) {
 
 pestanaIngreso.addEventListener("click", () => mostrarPestana("ingreso"));
 pestanaRegistro.addEventListener("click", () => mostrarPestana("registro"));
+if (params.get("modo") === "registro") mostrarPestana("registro");
 
 // ---------- Olvidé mi contraseña ----------
 document.getElementById("btn-olvide").addEventListener("click", () => {
@@ -160,3 +161,9 @@ formRegistro.addEventListener("submit", async (e) => {
 
 // El cumpleaños no puede ser una fecha futura
 document.getElementById("registro-nacimiento").max = hoyISO();
+
+// Texto del regalo de bienvenida (lo define el admin en Reglas)
+textoBienvenida().then((regalo) => {
+  const caja = document.getElementById("regalo-registro");
+  if (caja) caja.textContent = `Si te sumás, te regalamos: ${regalo.charAt(0).toLowerCase() + regalo.slice(1)}. Y te avisamos lo que pasa en la semana.`;
+}).catch(() => {});

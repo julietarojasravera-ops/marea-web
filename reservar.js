@@ -238,6 +238,7 @@ botonConfirmar.addEventListener("click", async () => {
     `${personasTexto(data.cantidad_personas)}${mesa ? `, mesa ${mesa.numero}` : ""}. ` +
     `Número de reserva: ${data.id_reserva}. Te mandamos la confirmación por correo.`;
   document.getElementById("confirmacion").classList.remove("oculto");
+  pintarIncentivoCorreos("incentivo-reserva");
 });
 
 // ---------- Inicio ----------

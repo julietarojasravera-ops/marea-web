@@ -6,6 +6,7 @@
 
 let idPerfil = null;
 let temporizadorGuardado = null;
+let aceptabaAntes = false;
 
 const campo = (id) => document.getElementById(`perfil-campo-${id}`);
 
@@ -43,6 +44,12 @@ async function cargarPerfil() {
   campo("email").value = data.email;
   campo("nacimiento").value = data.fecha_nacimiento || "";
   campo("promociones").checked = !!data.acepta_promociones;
+  aceptabaAntes = !!data.acepta_promociones;
+  if (!aceptabaAntes) {
+    const regalo = await textoBienvenida();
+    document.getElementById("perfil-ayuda-promos").innerHTML =
+      `Si te sumás, te regalamos <b>${esc(regalo.charAt(0).toLowerCase() + regalo.slice(1))}</b>. Además: lo que pasa en la semana, promociones exclusivas y tus regalos.`;
+  }
 }
 
 function confirmarGuardado() {
@@ -90,7 +97,10 @@ document.getElementById("form-perfil").addEventListener("submit", async (e) => {
 
   if (error) { mostrarAviso("aviso-perfil", "error", mensajeDeError(error)); return; }
   confirmarGuardado();
-  mostrarAviso("aviso-perfil", "ok", "¡Listo! Guardamos tus datos.");
+  const recienSumado = !aceptabaAntes && campo("promociones").checked;
+  mostrarAviso("aviso-perfil", "ok", recienSumado
+    ? "¡Listo! Guardamos tus datos y te sumaste a los beneficios: tu regalo de bienvenida ya está en Mis beneficios."
+    : "¡Listo! Guardamos tus datos.");
   cargarPerfil();
   pintarMenu();   // por si cambió el nombre
 });

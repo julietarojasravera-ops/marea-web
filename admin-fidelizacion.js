@@ -13,7 +13,9 @@ const SEGMENTOS = {
   inactivo:  { nombre: "Inactivos",  icono: "–", texto: "Hace mucho que no vienen." },
 };
 const DIAS_SEMANA = ["", "lunes", "martes", "miércoles", "jueves", "viernes", "sábados", "domingos"];
-const NOMBRES_TIPO_BENEFICIO = { cumpleanos: "Cumpleaños", reactivacion: "Reactivación", visitas: "Tarjeta de visitas", campana: "Promoción" };
+const NOMBRES_TIPO_BENEFICIO = { cumpleanos: "Cumpleaños", reactivacion: "Reactivación", visitas: "Tarjeta de visitas", campana: "Promoción", bienvenida: "Bienvenida" };
+// Grupo aparte de los segmentos: clientes que no aceptaron correos
+const SIN_CORREOS = { nombre: "Sin correos", icono: "✉", texto: "No aceptaron recibir correos: invitalos en el local." };
 
 let clientesFide = [];
 let segmentoElegido = "";
@@ -67,6 +69,15 @@ function pintarSegmentos() {
         <span class="segmento-texto">${s.texto}</span>
       </button>`;
   });
+  const sin = clientesFide.filter((c) => !c.acepta_promociones).length;
+  tarjetas.push(`
+      <button type="button" class="tarjeta-segmento segmento-borde-sin_correos ${segmentoElegido === "sin_correos" ? "activa" : ""}" data-segmento="sin_correos">
+        <span class="segmento-icono segmento-sin_correos" aria-hidden="true">${SIN_CORREOS.icono}</span>
+        <span class="segmento-cifra">${sin}</span>
+        <span class="segmento-nombre">${SIN_CORREOS.nombre}</span>
+        <span class="segmento-pct">${Math.round((sin * 100) / total)} % de los clientes</span>
+        <span class="segmento-texto">${SIN_CORREOS.texto}</span>
+      </button>`);
   document.getElementById("tarjetas-segmentos").innerHTML = tarjetas.join("");
 }
 
@@ -110,15 +121,15 @@ function sellosDe(visitas) {
 function pintarTablaFide() {
   const texto = document.getElementById("buscar-fide").value.trim().toLowerCase();
   const lista = clientesFide
-    .filter((c) => !segmentoElegido || c.segmento === segmentoElegido)
+    .filter((c) => !segmentoElegido || (segmentoElegido === "sin_correos" ? !c.acepta_promociones : c.segmento === segmentoElegido))
     .filter((c) => !texto || [c.nombre, c.email].some((v) => (v || "").toLowerCase().includes(texto)))
     .sort((a, b) => b.visitas_12m - a.visitas_12m || b.visitas - a.visitas);
 
-  const s = SEGMENTOS[segmentoElegido];
+  const s = segmentoElegido === "sin_correos" ? SIN_CORREOS : SEGMENTOS[segmentoElegido];
   document.getElementById("titulo-lista-segmento").textContent = s ? s.nombre : "Todos los clientes";
-  document.getElementById("bajada-lista-segmento").textContent = s
-    ? `${s.texto} Tocá de nuevo el segmento para ver a todos.`
-    : "Tocá un segmento para filtrar.";
+  document.getElementById("bajada-lista-segmento").textContent = segmentoElegido === "sin_correos"
+    ? `No reciben promociones ni avisos. Cuando reservan te avisamos para que el equipo los invite en el local: si se suman, reciben ${reglasFide ? reglasFide.beneficio_bienvenida.toLowerCase() : "un regalo de bienvenida"}. Tocá de nuevo para ver a todos.`
+    : s ? `${s.texto} Tocá de nuevo el segmento para ver a todos.` : "Tocá un segmento para filtrar.";
 
   const cuerpo = document.getElementById("tabla-fide");
   if (!lista.length) {
@@ -150,6 +161,7 @@ function pintarReglas(beneficios) {
     <div class="regla"><span class="regla-icono">🎂</span><div><b>Cumpleaños</b> · ${r.dias_aviso_cumple} días antes<div class="celda-secundaria">${esc(r.beneficio_cumple)}</div></div></div>
     <div class="regla"><span class="regla-icono">🌊</span><div><b>Reactivación</b> · a los ${r.dias_en_riesgo} días sin venir<div class="celda-secundaria">${esc(r.beneficio_reactivacion)}</div></div></div>
     <div class="regla"><span class="regla-icono">🍷</span><div><b>Tarjeta de visitas</b> · cada ${r.visitas_meta} visitas<div class="celda-secundaria">${esc(r.beneficio_visitas)}</div></div></div>
+    ${r.beneficio_bienvenida ? `<div class="regla"><span class="regla-icono">🥂</span><div><b>Bienvenida</b> · al aceptar correos${r.aviso_sin_correos ? " · te avisamos si reserva alguien sin correos" : ""}<div class="celda-secundaria">${esc(r.beneficio_bienvenida)}</div></div></div>` : ""}
     ${r.automatico ? "" : '<div class="aviso aviso-info mt-2">Las acciones automáticas están apagadas. Solo se ejecutan con el botón.</div>'}`;
 
   const hoy = hoyISO();
@@ -191,6 +203,7 @@ const CAMPOS_REGLAS = {
   "regla-riesgo": "dias_en_riesgo", "regla-inactivo": "dias_inactivo", "regla-ben-cumple": "beneficio_cumple",
   "regla-aviso-cumple": "dias_aviso_cumple", "regla-vigencia": "vigencia_dias",
   "regla-ben-react": "beneficio_reactivacion", "regla-ben-visitas": "beneficio_visitas", "regla-meta": "visitas_meta",
+  "regla-ben-bienvenida": "beneficio_bienvenida",
 };
 const formReglas = document.getElementById("form-reglas");
 
@@ -198,6 +211,7 @@ document.getElementById("btn-editar-reglas").addEventListener("click", () => {
   if (!reglasFide) return;
   Object.entries(CAMPOS_REGLAS).forEach(([id, col]) => { document.getElementById(id).value = reglasFide[col]; });
   document.getElementById("regla-automatico").checked = reglasFide.automatico;
+  document.getElementById("regla-aviso-sin-correos").checked = reglasFide.aviso_sin_correos !== false;
   formReglas.classList.remove("oculto");
   formReglas.scrollIntoView({ behavior: "smooth", block: "start" });
 });
@@ -205,7 +219,10 @@ document.getElementById("btn-cerrar-reglas").addEventListener("click", () => for
 
 formReglas.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const cambios = { automatico: document.getElementById("regla-automatico").checked };
+  const cambios = {
+    automatico: document.getElementById("regla-automatico").checked,
+    aviso_sin_correos: document.getElementById("regla-aviso-sin-correos").checked,
+  };
   Object.entries(CAMPOS_REGLAS).forEach(([id, col]) => {
     const campo = document.getElementById(id);
     cambios[col] = campo.type === "number" ? Number(campo.value) : campo.value.trim();
@@ -278,10 +295,9 @@ async function actualizarAlcance() {
   const caja = document.getElementById("camp-alcance");
   const { data, error } = await db.rpc("vista_previa_campana", { p_segmento: v.segmento, p_zona: v.zona, p_grupo: v.grupo });
   if (error) { caja.textContent = ""; return; }
-  caja.innerHTML = data.coinciden
-    ? `Llega a <b>${data.destinatarios}</b> ${data.destinatarios === 1 ? "cliente" : "clientes"}` +
-      (data.sin_permiso ? ` · ${data.sin_permiso} más coinciden pero no aceptaron correos.` : ".")
-    : "Ningún cliente coincide con estos filtros.";
+  caja.innerHTML = data.destinatarios
+    ? `Llega a <b>${data.destinatarios}</b> ${data.destinatarios === 1 ? "cliente" : "clientes"} (los que aceptaron recibir correos).`
+    : "Ningún cliente con correos activados coincide con estos filtros.";
   caja.dataset.destinatarios = data.destinatarios;
   pintarDestinatarios(v);
 }
@@ -294,15 +310,16 @@ function coincideConPublico(c, v) {
 }
 
 function pintarDestinatarios(v) {
-  const lista = clientesFide.filter((c) => coincideConPublico(c, v))
-    .sort((a, b) => Number(b.acepta_promociones) - Number(a.acepta_promociones) || (a.nombre || "").localeCompare(b.nombre || ""));
+  // Solo los que van a recibir el correo
+  const lista = clientesFide.filter((c) => c.acepta_promociones && coincideConPublico(c, v))
+    .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
   const caja = document.getElementById("camp-lista");
   document.getElementById("camp-destinatarios").classList.toggle("oculto", !lista.length);
   caja.innerHTML = lista.map((c) => `
-    <li class="${c.acepta_promociones ? "" : "sin-permiso"}">
+    <li>
       <span class="celda-principal">${esc(c.nombre || "Sin nombre")}</span>
       <span class="celda-secundaria">${esc(c.email)}</span>
-      <span class="${c.acepta_promociones ? "recibe" : "no-recibe"}">${c.acepta_promociones ? "✓ recibe el correo" : "no aceptó correos"}</span>
+      <span class="recibe">✓ recibe el correo</span>
     </li>`).join("");
 }
 ["camp-segmento", "camp-zona", "camp-grupo"].forEach((id) =>

@@ -28,3 +28,23 @@
   }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
   elementos.forEach((el) => observador.observe(el));
 })();
+
+// ---------- Banda "Club Marea": texto del regalo y botón según la sesión ----------
+(async () => {
+  if (typeof db === "undefined") return;
+  try {
+    const regalo = await textoBienvenida();
+    const p = document.getElementById("beneficio-regalo");
+    if (p) p.textContent = regalo.endsWith(".") ? regalo : `${regalo}.`;
+    const sesion = await obtenerSesion();
+    if (!sesion) return;
+    const { data: u } = await db.from("usuario").select("rol, acepta_promociones").eq("id_usuario", sesion.user.id).single();
+    const cta = document.getElementById("beneficios-cta");
+    if (!u || u.rol !== "cliente" || u.acepta_promociones) {
+      document.getElementById("beneficios").classList.add("oculto");
+    } else if (cta) {
+      cta.textContent = "Quiero recibir beneficios";
+      cta.href = "perfil.html";
+    }
+  } catch (e) { /* la portada se ve igual */ }
+})();

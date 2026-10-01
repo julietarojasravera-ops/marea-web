@@ -1122,10 +1122,11 @@ a { color: var(--azul-ola); }
 .segmento-nuevo { background: #e8eef5; color: var(--azul-marea); }
 .segmento-en_riesgo { background: #fdeee2; color: #9a4a1c; }
 .segmento-inactivo { background: #eeebe6; color: #6b6458; }
+.segmento-sin_correos { background: #f3eefb; color: #5b3fa0; }
 
 .segmentos {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 1rem;
 }
 .tarjeta-segmento {
@@ -1149,6 +1150,7 @@ a { color: var(--azul-ola); }
 .segmento-borde-nuevo { border-top-color: var(--azul-ola); }
 .segmento-borde-en_riesgo { border-top-color: #d07a3c; }
 .segmento-borde-inactivo { border-top-color: #a79f91; }
+.segmento-borde-sin_correos { border-top-color: #8a6fcf; border-style: dashed solid solid; }
 .segmento-icono {
   width: 2rem; height: 2rem; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
@@ -1429,3 +1431,85 @@ a { color: var(--azul-ola); }
 .destinatarios-lista .recibe { margin-left: auto; color: var(--verde-alga); font-weight: 600; font-size: 0.8rem; }
 .destinatarios-lista .no-recibe { margin-left: auto; color: var(--gris-suave); font-size: 0.8rem; }
 .destinatarios-lista .sin-permiso .celda-principal { color: var(--gris-suave); }
+
+/* =========================================================
+   Incentivo para sumarse a los correos de beneficios
+   ========================================================= */
+.incentivo-correos {
+  display: flex; gap: 1.1rem; align-items: flex-start;
+  background: linear-gradient(135deg, var(--crema), #fff);
+  border: 1px solid var(--dorado-claro); border-left: 5px solid var(--dorado);
+  border-radius: var(--radio); padding: 1.25rem 1.4rem; margin: 0 0 1.75rem;
+  box-shadow: var(--sombra);
+}
+.incentivo-icono {
+  flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 1.35rem;
+  background: var(--azul-marea); color: var(--arena);
+}
+.incentivo-listo { border-left-color: var(--verde-alga); }
+.incentivo-listo .incentivo-icono { background: var(--verde-alga); color: #fff; }
+.incentivo-titulo { font-family: var(--fuente-titulo); font-size: 1.55rem; color: var(--azul-marea); margin: 0 0 0.5rem; }
+.incentivo-lista { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; gap: 0.35rem; }
+.incentivo-lista li { position: relative; padding-left: 1.2rem; font-size: 0.95rem; }
+.incentivo-lista li::before { content: "•"; position: absolute; left: 0.2rem; color: var(--dorado); font-weight: 700; }
+.incentivo-nota { font-size: 0.8rem; color: var(--gris-suave); margin: 0.6rem 0 0; }
+.regalo-registro { display: block; font-size: 0.82rem; color: var(--dorado); margin-top: 0.15rem; }
+@media (max-width: 575px) {
+  .incentivo-correos { flex-direction: column; padding: 1.1rem; }
+}
+
+/* Banda "Club Marea" de la portada */
+.beneficio-tarjeta {
+  height: 100%; background: #fff; border-radius: var(--radio); padding: 1.2rem 1.25rem;
+  box-shadow: var(--sombra); border-top: 3px solid var(--dorado);
+}
+.beneficio-tarjeta h3 { font-family: var(--fuente-titulo); font-size: 1.35rem; color: var(--azul-marea); margin: 0.4rem 0 0.3rem; }
+.beneficio-tarjeta p { margin: 0; font-size: 0.92rem; color: var(--gris-suave); }
+.beneficio-icono { font-size: 1.6rem; }
+
+/* =========================================================
+   Clima y personal + invitar a sumarse (panel admin)
+   ========================================================= */
+.personal-noche {
+  background: #fff; border-radius: var(--radio); box-shadow: var(--sombra);
+  padding: 0.85rem 1.1rem; margin: 0 0 1rem; border-left: 4px solid var(--azul-ola); font-size: 0.95rem;
+}
+.btn-enlace { background: none; border: 0; padding: 0; color: var(--azul-ola); font-weight: 600; text-decoration: underline; cursor: pointer; }
+.invitar-hoy { margin: 0 0 1.25rem; border-left: 4px solid #8a6fcf; }
+.lista-invitar { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.35rem; }
+.lista-invitar li { display: flex; gap: 0.5rem; align-items: baseline; flex-wrap: wrap; padding: 0.35rem 0; border-bottom: 1px solid #efe7d8; }
+.lista-invitar li:last-child { border-bottom: 0; }
+
+.indicadores-clima { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 0.9rem; }
+.indicadores-clima .celda-secundaria { display: block; font-size: 0.72rem; }
+.grafico-svg { width: 100%; height: auto; display: block; }
+.eje-linea { stroke: #ece4d4; stroke-width: 1; }
+.eje-texto { font-size: 11px; fill: var(--gris-suave); font-family: var(--fuente-texto); }
+.eje-cat { font-size: 12.5px; fill: var(--azul-marea); font-weight: 600; font-family: var(--fuente-texto); }
+.barra-valor { font-size: 12px; fill: var(--tinta); font-weight: 600; font-family: var(--fuente-texto); }
+.barra-finde { fill: var(--azul-marea); }
+.barra-semana { fill: var(--dorado); }
+.punto-finde { fill: var(--azul-marea); fill-opacity: 0.85; }
+.punto-semana { fill: var(--dorado); fill-opacity: 0.85; }
+.punto-lluvia { stroke: #3b82c4; stroke-width: 2.5; }
+.leyenda-grafico { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.8rem; color: var(--gris-suave); margin-bottom: 0.4rem; }
+.leyenda-grafico .muestra { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 0.35rem; vertical-align: -1px; }
+.leyenda-grafico .muestra.barra-finde, .leyenda-grafico .muestra.punto-finde { background: var(--azul-marea); }
+.leyenda-grafico .muestra.barra-semana, .leyenda-grafico .muestra.punto-semana { background: var(--dorado); }
+.leyenda-grafico .muestra.punto-finde, .leyenda-grafico .muestra.punto-semana { border-radius: 50%; }
+.leyenda-grafico .muestra.punto-lluvia { background: transparent; border: 2.5px solid #3b82c4; border-radius: 50%; }
+.conclusion-clima { margin-top: 0.6rem; font-size: 0.92rem; color: var(--tinta); }
+
+.clima-chip { display: inline-block; border-radius: 999px; padding: 0.1rem 0.6rem; font-size: 0.85rem; font-weight: 600; margin-right: 0.35rem; }
+.clima-calida { background: #fdf0d8; color: #8a5a10; }
+.clima-templada { background: #e8f1e9; color: #2f6046; }
+.clima-fria { background: #e6eef7; color: #24496f; }
+.clima-lluvia { background: #e3ecf8; color: #1f4f86; }
+.mozos-sugeridos { font-family: var(--fuente-titulo); font-size: 1.5rem; color: var(--azul-marea); font-weight: 600; }
+.campo-mozos { width: 5.2rem; }
+.campo-mozos.guardado { border-color: var(--verde-alga); box-shadow: 0 0 0 0.2rem rgba(63, 125, 92, 0.2); }
+.nota-mozos { display: inline-block; font-size: 0.72rem; border-radius: 999px; padding: 0.05rem 0.5rem; margin-left: 0.3rem; }
+.nota-mozos.falta { background: #fde7e2; color: #9b3a26; }
+.nota-mozos.sobra { background: #eef0f3; color: #4c5866; }
+.nota-mozos.bien { background: #e6f2eb; color: #24513a; }

@@ -249,3 +249,55 @@ document.addEventListener("DOMContentLoaded", async () => {
   await pintarMenu();
   marcarPaginaActual();
 });
+
+// ---------- Incentivo para sumarse a los correos de beneficios ----------
+// Se muestra solo a clientes con sesión que todavía no aceptaron correos.
+// Al tocar el botón se activa el permiso y la base le regala la bienvenida.
+async function textoBienvenida() {
+  const { data } = await db.rpc("texto_bienvenida");
+  return data || "Una copa de bienvenida en tu próxima visita";
+}
+
+async function pintarIncentivoCorreos(idCaja, alSumarse) {
+  const caja = document.getElementById(idCaja);
+  if (!caja) return;
+  const sesion = await obtenerSesion();
+  if (!sesion) return;
+  const { data: u } = await db.from("usuario").select("rol, acepta_promociones")
+    .eq("id_usuario", sesion.user.id).single();
+  if (!u || u.rol !== "cliente" || u.acepta_promociones) { caja.innerHTML = ""; return; }
+  const regalo = await textoBienvenida();
+  caja.innerHTML = `
+    <aside class="incentivo-correos" aria-labelledby="${idCaja}-titulo">
+      <div class="incentivo-icono" aria-hidden="true">✉</div>
+      <div class="incentivo-cuerpo">
+        <h2 class="incentivo-titulo" id="${idCaja}-titulo">Sumate a los beneficios de Marea</h2>
+        <ul class="incentivo-lista">
+          <li><b>Regalo de bienvenida:</b> ${esc(regalo)}.</li>
+          <li><b>Lo que pasa en la semana:</b> música en vivo, platos nuevos y noches especiales.</li>
+          <li><b>Promociones exclusivas</b> que solo llegan por correo.</li>
+          <li><b>Te avisamos tus regalos</b> de cumpleaños y de la tarjeta de visitas.</li>
+        </ul>
+        <button type="button" class="btn-marea btn-dorado" id="${idCaja}-boton">Quiero recibir beneficios</button>
+        <p class="incentivo-nota">Un correo por semana como máximo. Lo podés desactivar cuando quieras desde Mi perfil.</p>
+      </div>
+    </aside>`;
+  document.getElementById(`${idCaja}-boton`).addEventListener("click", async (e) => {
+    e.target.disabled = true;
+    const { error } = await db.from("usuario").update({ acepta_promociones: true }).eq("id_usuario", sesion.user.id);
+    if (error) {
+      e.target.disabled = false;
+      caja.querySelector(".incentivo-nota").textContent = mensajeDeError(error);
+      return;
+    }
+    caja.innerHTML = `
+      <aside class="incentivo-correos incentivo-listo" role="status">
+        <div class="incentivo-icono" aria-hidden="true">✓</div>
+        <div class="incentivo-cuerpo">
+          <h2 class="incentivo-titulo">¡Listo, ya sos parte!</h2>
+          <p class="mb-0">Te regalamos <b>${esc(regalo.charAt(0).toLowerCase() + regalo.slice(1))}</b>. Lo ves en <a href="mis-reservas.html#caja-beneficios">Mis beneficios</a> y te llega por correo.</p>
+        </div>
+      </aside>`;
+    if (typeof alSumarse === "function") alSumarse();
+  });
+}

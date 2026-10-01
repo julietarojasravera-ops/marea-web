@@ -80,12 +80,27 @@ Datos almacenados en Supabase ──► Segmentación de clientes ──► Make
 - El cliente ve sus cupones y su **tarjeta de sellos** en **Mis beneficios**.
 - En el panel, la pestaña **Fidelización** muestra los segmentos, la lista de clientes con sus preferencias y su cumpleaños, el **canje de cupones**, las reglas, el botón *Ejecutar ahora*, las promociones enviadas y cuántos cupones se usaron.
 
+## Clientes que no aceptaron correos
+
+- En **Fidelización** aparecen como un grupo aparte, **Sin correos**. Las promociones solo muestran a quienes sí las reciben.
+- Cuando uno de ellos reserva, el admin recibe un correo para **invitarlo en el local**, y el Dashboard muestra la lista del día en **“Invitá a sumarse a los beneficios”**.
+- En la web (portada, registro, Mis reservas, después de reservar y Mi perfil) se muestra **por qué conviene sumarse**: regalo de bienvenida, lo que pasa en la semana, promociones exclusivas y aviso de sus regalos.
+- Al aceptar correos, la base le da **una sola vez** el regalo de bienvenida (se edita en Reglas).
+
+## Clima y personal
+
+Pestaña del panel que cruza el **clima de cada noche** con los **cubiertos** (personas atendidas: como no se registran montos, los cubiertos son la medida de ventas) y los **mozos** que trabajaron.
+
+- **Correlación:** cuánto cambian los cubiertos por cada 5 °C (comparando cada noche con el promedio de su día de la semana) y cuánto bajan con lluvia.
+- **Previsión:** para los próximos 7 días, cubiertos esperados según noches parecidas (mismo día y mismo clima, o lo ya reservado si es más) y **mozos sugeridos** = cubiertos ÷ cubiertos por mozo.
+- **Historial de personal:** el admin anota los mozos de cada noche y ve si faltaron o sobraron.
+
 ## Integraciones con APIs externas
 
 | API | Para qué | Cómo |
 |---|---|---|
 | **Anthropic (Claude Haiku 4.5)** | Sugerir promociones según el público elegido | Supabase Edge Function `sugerir-promocion`. La clave está en los *Secrets* de Supabase. A la IA solo le llegan **totales anónimos** (nunca nombres ni correos). Solo admins, máximo 30 por día. |
-| **Open-Meteo** (clima) | Pronóstico para el día y la hora de la reserva (cliente) y clima de la noche con un consejo para el servicio (admin) | Llamada directa desde el sitio. Es gratis y sin clave, así que no hay nada secreto en el navegador. |
+| **Open-Meteo** (clima) | Pronóstico para el día y la hora de la reserva (cliente), clima de la noche (admin) y **clima histórico de cada noche** (últimos 92 días) para relacionarlo con los cubiertos y sugerir cuántos mozos poner | Llamada directa desde el sitio. Es gratis y sin clave, así que no hay nada secreto en el navegador. El panel guarda el clima de cada noche en la tabla `clima_dia`. |
 | **Make + Gmail** | Correos de reservas, alertas, beneficios y promociones | Webhook con secreto compartido |
 
 ## Tiempos de mesa (como los sistemas profesionales)
@@ -156,7 +171,8 @@ Navegador ──► Vercel (sitio) ──► Supabase (Auth + API + PostgreSQL)
 | `admin.html` / `admin.js` | Panel: Dashboard, Reservas, Mesas, Clientes |
 | `admin-salon.js` | Salón en vivo, línea de tiempo y próximas llegadas del panel |
 | `admin-equipo.js` | Pestaña Equipo: administradores, invitaciones y auditoría |
-| `admin-fidelizacion.js` | Pestaña Fidelización (Parte B): segmentos, canje de cupones, reglas y promociones |
+| `admin-fidelizacion.js` | Pestaña Fidelización (Parte B): segmentos, grupo sin correos, canje de cupones, reglas y promociones |
+| `admin-personal.js` | Pestaña Clima y personal (correlación clima–cubiertos, mozos sugeridos) y avisos del Dashboard |
 | `invitacion.html` / `invitacion.js` | Aceptar una invitación para ser administrador |
 | `comun.js` | Funciones compartidas (sesión, roles, mensajes, tiempos de mesa) |
 | `plano.js` | Dibuja el plano del local (elegir mesa y editor del admin) |
@@ -178,6 +194,8 @@ Navegador ──► Vercel (sitio) ──► Supabase (Auth + API + PostgreSQL)
 | `sugerir-promocion.ts` | Supabase Edge Function que pide la sugerencia a Claude (se pega en Supabase, no va en Vercel) |
 | `clima.js` | Pronóstico del clima (Open-Meteo) en Reservar y en el Dashboard |
 | `sql-10-datos-demo-fidelizacion.sql` | Opcional: 13 clientes de prueba con historial, para mostrar los segmentos en la demo |
+| `sql-11-correos-y-clima.sql` | Grupo sin correos (aviso al admin, regalo de bienvenida) y clima + personal por noche |
+| `sql-12-datos-demo-clima.sql` | Opcional: 3 meses de historial con el clima real, para mostrar la correlación en la demo |
 | `diagramas/` | Arquitectura, flujo de usuario y MER (Parte A) · flujo y MER de la Parte B |
 
 Los SQL se corren en ese orden en el SQL Editor de Supabase. Las cuentas de administradores se crean con un script aparte que **no** está en el repositorio (tiene contraseñas). La dirección del webhook de Make
