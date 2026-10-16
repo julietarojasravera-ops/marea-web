@@ -221,8 +221,9 @@
           <form id="form-reserva">
             <div class="row g-3">
               <div class="col-md-4" id="grupo-cliente">
-                <label class="form-label" for="r-cliente">Cliente</label>
-                <select class="form-select" id="r-cliente" required></select>
+                <label class="form-label" for="r-cliente-buscar">Cliente</label>
+                <input class="form-control mb-2" type="search" id="r-cliente-buscar" placeholder="Buscá por nombre, correo o teléfono" autocomplete="off">
+                <select class="form-select" id="r-cliente" required aria-label="Elegí el cliente"></select>
               </div>
               <div class="col-md-3">
                 <label class="form-label" for="r-fecha">Día</label>
@@ -280,6 +281,10 @@
             </thead>
             <tbody id="tabla-reservas"></tbody>
           </table>
+        </div>
+        <div class="pie-lista">
+          <span class="celda-secundaria" id="conteo-reservas"></span>
+          <button type="button" class="btn-borde oculto" id="btn-mas-reservas">Ver más</button>
         </div>
       </section>
 
@@ -396,6 +401,10 @@
             </thead>
             <tbody id="tabla-clientes"></tbody>
           </table>
+        </div>
+        <div class="pie-lista">
+          <span class="celda-secundaria" id="conteo-clientes"></span>
+          <button type="button" class="btn-borde oculto" id="btn-mas-clientes">Ver más</button>
         </div>
       </section>
       <!-- ================= CLIMA Y PERSONAL ================= -->
@@ -550,6 +559,10 @@
                   <tbody id="tabla-fide"></tbody>
                 </table>
               </div>
+              <div class="pie-lista">
+                <span class="celda-secundaria" id="conteo-fide"></span>
+                <button type="button" class="btn-borde oculto" id="btn-mas-fide">Ver más</button>
+              </div>
             </div>
           </div>
 
@@ -600,6 +613,11 @@
             <div class="col-6 col-md-3">
               <label class="form-label" for="regla-meta">Cada cuántas visitas</label>
               <input class="form-control" type="number" id="regla-meta" min="2" max="50" required>
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label" for="regla-tope">Máximo de beneficios por día</label>
+              <input class="form-control" type="number" id="regla-tope" min="10" max="5000" required>
+              <div class="ayuda-campo">Si hay más, se mandan en los días siguientes.</div>
             </div>
             <div class="col-md-6 d-flex align-items-end">
               <div class="form-check consentimiento">

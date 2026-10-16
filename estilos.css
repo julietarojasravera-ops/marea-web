@@ -1513,3 +1513,10 @@ a { color: var(--azul-ola); }
 .nota-mozos.falta { background: #fde7e2; color: #9b3a26; }
 .nota-mozos.sobra { background: #eef0f3; color: #4c5866; }
 .nota-mozos.bien { background: #e6f2eb; color: #24513a; }
+
+/* ---------- Listas largas: "Ver más" (sql-13) ---------- */
+.pie-lista {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; flex-wrap: wrap; margin-top: 12px;
+}
+.destinatarios-resto { color: var(--gris-suave); font-style: italic; justify-content: center; }

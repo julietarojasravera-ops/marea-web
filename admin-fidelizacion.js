@@ -17,9 +17,12 @@ const NOMBRES_TIPO_BENEFICIO = { cumpleanos: "Cumpleaños", reactivacion: "React
 // Grupo aparte de los segmentos: clientes que no aceptaron correos
 const SIN_CORREOS = { nombre: "Sin correos", icono: "✉", texto: "No aceptaron recibir correos: invitalos en el local." };
 
-let clientesFide = [];
+let clientesFide = [];      // la página de clientes que se está mostrando
+let resumenFide = null;     // totales calculados en la base (segmentos, cupones)
 let segmentoElegido = "";
 let reglasFide = null;
+const POR_PAGINA_FIDE = 50;
+let totalFide = 0;
 
 function textoSegmento(s) {
   return `<span class="segmento segmento-${s}">${SEGMENTOS[s]?.nombre.replace(/s$/, "") || s}</span>`;
@@ -33,33 +36,34 @@ function haceDias(n) {
   return `hace ${Math.round(n / 30)} meses`;
 }
 
+// La base hace las cuentas y manda solo lo que se ve (escala a miles de clientes)
 async function cargarFidelizacion() {
-  const [clientes, reglas, campanas, beneficios] = await Promise.all([
-    db.rpc("clientes_fidelizacion"),
+  const [resumen, reglas, campanas, beneficios] = await Promise.all([
+    db.rpc("resumen_fidelizacion"),
     db.from("ajustes_fidelizacion").select("*").eq("id", 1).single(),
     db.from("campana").select("*").order("creada_en", { ascending: false }).limit(8),
     db.from("beneficio").select("id_beneficio, codigo, tipo, descripcion, vence_en, usado_en, correo_enviado, id_campana, creado_en, usuario:usuario!beneficio_id_usuario_fkey(nombre, email)")
-      .order("creado_en", { ascending: false }).limit(200),
+      .order("creado_en", { ascending: false }).limit(8),
   ]);
-  if (clientes.error) {
-    avisoAdmin("error", "Falta instalar la Parte B en Supabase (sql-9-fidelizacion.sql). " + mensajeDeError(clientes.error));
+  if (resumen.error) {
+    avisoAdmin("error", "Falta instalar la versión final de la base en Supabase (sql-13-escala-y-orden.sql). " + mensajeDeError(resumen.error));
     return;
   }
-  clientesFide = clientes.data;
+  resumenFide = resumen.data;
   reglasFide = reglas.data;
   pintarSegmentos();
-  pintarTablaFide();
-  pintarReglas(beneficios.data || []);
-  pintarCampanas(campanas.data || [], beneficios.data || []);
+  cargarTablaFide();
+  pintarReglas();
+  pintarCampanas(campanas.data || []);
   pintarBeneficios(beneficios.data || []);
   actualizarAlcance();
 }
 
 // ---------- Segmentos ----------
 function pintarSegmentos() {
-  const total = clientesFide.length || 1;
+  const total = resumenFide.total || 1;
   const tarjetas = Object.entries(SEGMENTOS).map(([clave, s]) => {
-    const n = clientesFide.filter((c) => c.segmento === clave).length;
+    const n = resumenFide.segmentos[clave] || 0;
     return `
       <button type="button" class="tarjeta-segmento segmento-borde-${clave} ${segmentoElegido === clave ? "activa" : ""}" data-segmento="${clave}">
         <span class="segmento-icono segmento-${clave}" aria-hidden="true">${s.icono}</span>
@@ -69,7 +73,7 @@ function pintarSegmentos() {
         <span class="segmento-texto">${s.texto}</span>
       </button>`;
   });
-  const sin = clientesFide.filter((c) => !c.acepta_promociones).length;
+  const sin = resumenFide.sin_correos || 0;
   tarjetas.push(`
       <button type="button" class="tarjeta-segmento segmento-borde-sin_correos ${segmentoElegido === "sin_correos" ? "activa" : ""}" data-segmento="sin_correos">
         <span class="segmento-icono segmento-sin_correos" aria-hidden="true">${SIN_CORREOS.icono}</span>
@@ -86,7 +90,7 @@ document.getElementById("tarjetas-segmentos").addEventListener("click", (e) => {
   if (!boton) return;
   segmentoElegido = segmentoElegido === boton.dataset.segmento ? "" : boton.dataset.segmento;
   pintarSegmentos();
-  pintarTablaFide();
+  cargarTablaFide();
 });
 
 function preferenciasDe(c) {
@@ -118,12 +122,30 @@ function sellosDe(visitas) {
           <div class="celda-secundaria">${sellos} de ${meta}${visitas >= meta ? ` · ${Math.floor(visitas / meta)} ${Math.floor(visitas / meta) === 1 ? "premio" : "premios"}` : ""}</div>`;
 }
 
+// Trae una página de clientes ya filtrada y ordenada por la base.
+// mas = true: agrega la página siguiente debajo ("Ver más").
+async function cargarTablaFide(mas = false) {
+  const desde = mas ? clientesFide.length : 0;
+  const { data, error } = await db.rpc("clientes_fidelizacion_pagina", {
+    p_segmento: segmentoElegido || null,
+    p_buscar: document.getElementById("buscar-fide").value.trim() || null,
+    p_limite: POR_PAGINA_FIDE,
+    p_desde: desde,
+  });
+  if (error) { avisoAdmin("error", mensajeDeError(error)); return; }
+  clientesFide = mas ? clientesFide.concat(data) : data;
+  totalFide = data.length ? Number(data[0].total_filas) : (mas ? totalFide : 0);
+  pintarTablaFide();
+}
+
 function pintarTablaFide() {
-  const texto = document.getElementById("buscar-fide").value.trim().toLowerCase();
-  const lista = clientesFide
-    .filter((c) => !segmentoElegido || (segmentoElegido === "sin_correos" ? !c.acepta_promociones : c.segmento === segmentoElegido))
-    .filter((c) => !texto || [c.nombre, c.email].some((v) => (v || "").toLowerCase().includes(texto)))
-    .sort((a, b) => b.visitas_12m - a.visitas_12m || b.visitas - a.visitas);
+  const lista = clientesFide;
+  const botonMas = document.getElementById("btn-mas-fide");
+  botonMas.classList.toggle("oculto", lista.length >= totalFide);
+  botonMas.textContent = `Ver más (${(totalFide - lista.length).toLocaleString("es-UY")} restantes)`;
+  document.getElementById("conteo-fide").textContent = totalFide
+    ? `Mostrando ${lista.length.toLocaleString("es-UY")} de ${totalFide.toLocaleString("es-UY")}`
+    : "";
 
   const s = segmentoElegido === "sin_correos" ? SIN_CORREOS : SEGMENTOS[segmentoElegido];
   document.getElementById("titulo-lista-segmento").textContent = s ? s.nombre : "Todos los clientes";
@@ -150,11 +172,17 @@ function pintarTablaFide() {
       <td>${cumpleDe(c)}</td>
     </tr>`).join("");
 }
-document.getElementById("buscar-fide").addEventListener("input", pintarTablaFide);
+// Buscar en la base (espera a que termines de escribir)
+let esperaBuscarFide = null;
+document.getElementById("buscar-fide").addEventListener("input", () => {
+  clearTimeout(esperaBuscarFide);
+  esperaBuscarFide = setTimeout(() => cargarTablaFide(), 300);
+});
+document.getElementById("btn-mas-fide").addEventListener("click", () => cargarTablaFide(true));
 document.getElementById("btn-recargar-fide").addEventListener("click", cargarFidelizacion);
 
 // ---------- Acciones automáticas ----------
-function pintarReglas(beneficios) {
+function pintarReglas() {
   const r = reglasFide;
   if (!r) return;
   document.getElementById("reglas-resumen").innerHTML = `
@@ -164,22 +192,20 @@ function pintarReglas(beneficios) {
     ${r.beneficio_bienvenida ? `<div class="regla"><span class="regla-icono">🥂</span><div><b>Bienvenida</b> · al aceptar correos${r.aviso_sin_correos ? " · te avisamos si reserva alguien sin correos" : ""}<div class="celda-secundaria">${esc(r.beneficio_bienvenida)}</div></div></div>` : ""}
     ${r.automatico ? "" : '<div class="aviso aviso-info mt-2">Las acciones automáticas están apagadas. Solo se ejecutan con el botón.</div>'}`;
 
-  const hoy = hoyISO();
-  const hace30 = new Date(Date.now() - 30 * 86400000);
-  const vigentes = beneficios.filter((b) => !b.usado_en && b.vence_en >= hoy).length;
-  const creados30 = beneficios.filter((b) => new Date(b.creado_en) >= hace30);
-  const usados30 = creados30.filter((b) => b.usado_en).length;
-  const tasa = creados30.length ? Math.round((usados30 * 100) / creados30.length) : 0;
+  // Totales contados en la base (todos los cupones, no solo los últimos)
+  const k = resumenFide.cupones;
+  const tasa = k.creados_30 ? Math.round((k.usados_30 * 100) / k.creados_30) : 0;
   document.getElementById("indicadores-cupon").innerHTML = `
-    <div><span class="indicador-cifra">${vigentes}</span><span class="indicador-nombre">cupones vigentes</span></div>
-    <div><span class="indicador-cifra">${creados30.length}</span><span class="indicador-nombre">entregados en 30 días</span></div>
+    <div><span class="indicador-cifra">${k.vigentes.toLocaleString("es-UY")}</span><span class="indicador-nombre">cupones vigentes</span></div>
+    <div><span class="indicador-cifra">${k.creados_30.toLocaleString("es-UY")}</span><span class="indicador-nombre">entregados en 30 días</span></div>
     <div><span class="indicador-cifra">${tasa} %</span><span class="indicador-nombre">se usaron</span></div>`;
 
   const ultima = document.getElementById("ultima-ejecucion");
   if (r.ultima_ejecucion) {
     const res = r.ultimo_resumen || {};
     ultima.textContent = `Última revisión: ${fechaHora(r.ultima_ejecucion)} · ` +
-      `${res.cumpleanos || 0} cumpleaños, ${res.reactivacion || 0} reactivaciones, ${res.visitas || 0} tarjetas completas.`;
+      `${res.cumpleanos || 0} cumpleaños, ${res.reactivacion || 0} reactivaciones, ${res.visitas || 0} tarjetas completas.` +
+      (res.pendientes ? ` Quedaron ${res.pendientes} para los próximos días (tope de ${r.tope_diario} por día).` : "");
   } else {
     ultima.textContent = "Todavía no se ejecutó ninguna vez.";
   }
@@ -191,9 +217,10 @@ document.getElementById("btn-ejecutar-fide").addEventListener("click", async (e)
   e.target.disabled = false;
   if (error) { avisoAdmin("error", mensajeDeError(error)); return; }
   const total = (data.cumpleanos || 0) + (data.reactivacion || 0) + (data.visitas || 0);
-  avisoAdmin("ok", total
+  const quedan = data.pendientes ? ` Quedaron ${data.pendientes} para los próximos días, para no mandar demasiados correos juntos.` : "";
+  avisoAdmin("ok", (total
     ? `Listo: se entregaron ${total} beneficios (${data.cumpleanos} de cumpleaños, ${data.reactivacion} de reactivación y ${data.visitas} por tarjeta de visitas).`
-    : "Listo: hoy no había beneficios nuevos para entregar.");
+    : "Listo: hoy no había beneficios nuevos para entregar.") + quedan);
   cargarFidelizacion();
 });
 
@@ -203,13 +230,16 @@ const CAMPOS_REGLAS = {
   "regla-riesgo": "dias_en_riesgo", "regla-inactivo": "dias_inactivo", "regla-ben-cumple": "beneficio_cumple",
   "regla-aviso-cumple": "dias_aviso_cumple", "regla-vigencia": "vigencia_dias",
   "regla-ben-react": "beneficio_reactivacion", "regla-ben-visitas": "beneficio_visitas", "regla-meta": "visitas_meta",
-  "regla-ben-bienvenida": "beneficio_bienvenida",
+  "regla-ben-bienvenida": "beneficio_bienvenida", "regla-tope": "tope_diario",
 };
 const formReglas = document.getElementById("form-reglas");
 
 document.getElementById("btn-editar-reglas").addEventListener("click", () => {
   if (!reglasFide) return;
-  Object.entries(CAMPOS_REGLAS).forEach(([id, col]) => { document.getElementById(id).value = reglasFide[col]; });
+  Object.entries(CAMPOS_REGLAS).forEach(([id, col]) => {
+    const campo = document.getElementById(id);
+    if (campo && reglasFide[col] != null) campo.value = reglasFide[col];
+  });
   document.getElementById("regla-automatico").checked = reglasFide.automatico;
   document.getElementById("regla-aviso-sin-correos").checked = reglasFide.aviso_sin_correos !== false;
   formReglas.classList.remove("oculto");
@@ -225,6 +255,7 @@ formReglas.addEventListener("submit", async (e) => {
   };
   Object.entries(CAMPOS_REGLAS).forEach(([id, col]) => {
     const campo = document.getElementById(id);
+    if (!campo || reglasFide[col] === undefined) return;   // columna que esta base no tiene
     cambios[col] = campo.type === "number" ? Number(campo.value) : campo.value.trim();
   });
   if (cambios.dias_en_riesgo >= cambios.dias_inactivo) {
@@ -299,28 +330,28 @@ async function actualizarAlcance() {
     ? `Llega a <b>${data.destinatarios}</b> ${data.destinatarios === 1 ? "cliente" : "clientes"} (los que aceptaron recibir correos).`
     : "Ningún cliente con correos activados coincide con estos filtros.";
   caja.dataset.destinatarios = data.destinatarios;
-  pintarDestinatarios(v);
+  pintarDestinatarios(v, data.destinatarios);
 }
 
-// Lista de quiénes reciben la promoción (mismas reglas que la base de datos)
-function coincideConPublico(c, v) {
-  return (!v.segmento || c.segmento === v.segmento)
-    && (!v.zona || c.zona_favorita === v.zona)
-    && (!v.grupo || (v.grupo === "pareja" ? c.grupo_habitual <= 2 : c.grupo_habitual >= 4));
-}
-
-function pintarDestinatarios(v) {
-  // Solo los que van a recibir el correo
-  const lista = clientesFide.filter((c) => c.acepta_promociones && coincideConPublico(c, v))
-    .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || ""));
+// Lista de quiénes reciben la promoción: la arma la base (solo los que
+// aceptaron correos) y manda los primeros 100 por orden alfabético.
+const MAX_LISTA_DESTINATARIOS = 100;
+async function pintarDestinatarios(v, total) {
   const caja = document.getElementById("camp-lista");
-  document.getElementById("camp-destinatarios").classList.toggle("oculto", !lista.length);
-  caja.innerHTML = lista.map((c) => `
+  document.getElementById("camp-destinatarios").classList.toggle("oculto", !total);
+  if (!total) { caja.innerHTML = ""; return; }
+  const { data, error } = await db.rpc("destinatarios_campana", {
+    p_segmento: v.segmento, p_zona: v.zona, p_grupo: v.grupo, p_limite: MAX_LISTA_DESTINATARIOS,
+  });
+  if (error) { caja.innerHTML = ""; return; }
+  const resto = total - data.length;
+  caja.innerHTML = data.map((c) => `
     <li>
       <span class="celda-principal">${esc(c.nombre || "Sin nombre")}</span>
       <span class="celda-secundaria">${esc(c.email)}</span>
       <span class="recibe">✓ recibe el correo</span>
-    </li>`).join("");
+    </li>`).join("") +
+    (resto > 0 ? `<li class="destinatarios-resto">y ${resto.toLocaleString("es-UY")} ${resto === 1 ? "cliente más" : "clientes más"}</li>` : "");
 }
 ["camp-segmento", "camp-zona", "camp-grupo"].forEach((id) =>
   document.getElementById(id).addEventListener("change", actualizarAlcance));
@@ -377,15 +408,14 @@ document.getElementById("btn-ia").addEventListener("click", async (e) => {
   porque.classList.remove("oculto");
 });
 
-function pintarCampanas(campanas, beneficios) {
+function pintarCampanas(campanas) {
   const caja = document.getElementById("lista-campanas");
   if (!campanas.length) {
     caja.innerHTML = '<p class="pagina-bajada mb-0">Todavía no se envió ninguna promoción.</p>';
     return;
   }
   caja.innerHTML = campanas.map((k) => {
-    const cupones = beneficios.filter((b) => b.id_campana === k.id_campana);
-    const usados = cupones.filter((b) => b.usado_en).length;
+    const usados = (resumenFide.canjes_campana || {})[k.id_campana] || 0;
     const publico = [k.segmento ? SEGMENTOS[k.segmento]?.nombre : "Todos", k.zona, k.grupo === "pareja" ? "parejas" : k.grupo === "grupo" ? "grupos" : null]
       .filter(Boolean).join(" · ");
     return `
@@ -404,7 +434,7 @@ function pintarCampanas(campanas, beneficios) {
 
 function pintarBeneficios(beneficios) {
   const cuerpo = document.getElementById("tabla-beneficios");
-  const lista = beneficios.slice(0, 8);
+  const lista = beneficios;
   if (!lista.length) {
     cuerpo.innerHTML = `<tr><td colspan="4" class="text-center py-3 texto-suave">Todavía no hay beneficios.</td></tr>`;
     return;

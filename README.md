@@ -15,6 +15,7 @@ Proyecto académico — Incorporación Estratégica · Universidad ORT Uruguay.
 |---|---|
 | **Parte A — MVP** | ✅ Completa y funcionando |
 | Parte B — Segmentación y fidelización | ✅ Completa y funcionando |
+| Etapa final — Escalabilidad y orden de la base (versión 13) | ✅ Probada con 20.000 y 100.000 clientes |
 
 ## Qué hace (Parte A)
 
@@ -182,24 +183,48 @@ Navegador ──► Vercel (sitio) ──► Supabase (Auth + API + PostgreSQL)
 | `logo-marea.png` / `logo-marea-claro.png` / `favicon.png` | Logo en dos versiones e ícono del sitio |
 | `privacidad.html` | Política de privacidad (Ley 18.331) |
 | `vercel.json` | Encabezados de seguridad del sitio (CSP, anti-clickjacking) |
-| `sql-1-base-de-datos.sql` | Tablas, reglas, funciones y seguridad (RLS) en Supabase |
-| `sql-2-correos-y-alerta.sql` | Trigger que detecta reservas nuevas, cambios y cancelaciones, y la alerta del 80 % |
-| `sql-3-correos-armados.sql` | Arma el asunto y el diseño de cada correo antes de enviarlo a Make |
-| `sql-4-seguridad.sql` | Límite de reservas por cliente, secreto del webhook y consentimiento de privacidad |
-| `sql-5-tiempos-de-mesa.sql` | Tiempo de mesa por grupo, limpieza, cierre, ritmo de cocina, estado sentada, extender |
-| `sql-6-plano-y-alternativas.sql` | Forma y ubicación de las mesas, estado de cada mesa, elegir mesa y horarios alternativos |
-| `sql-7-profesional.sql` | 20 mesas con zonas, mesa justa por grupo, ocasión y comentarios, teléfono del cliente |
-| `sql-8-invitaciones-admin.sql` | Invitaciones de administradores (enlace único, cifrado, 48 h) y auditoría de roles |
-| `sql-9-fidelizacion.sql` | **Parte B:** cumpleaños, permiso de promociones, segmentación, tarjeta de visitas, cupones, promociones, correos, tarea diaria y resumen anónimo para la IA |
-| `sugerir-promocion.ts` | Supabase Edge Function que pide la sugerencia a Claude (se pega en Supabase, no va en Vercel) |
+| `supabase/instalacion/marea-instalacion-completa.sql` | **Instalación en un solo paso** para un proyecto de Supabase nuevo (equivale a sql-1 … sql-13) |
+| `supabase/migraciones/sql-1 … sql-13` | Historial de cambios de la base, en orden. Para un proyecto que ya tiene Marea, se corre solo lo que falta |
+| `supabase/demo/` | Datos de demostración (sql-10 fidelización, sql-12 clima) y `borrar-datos-demo.sql` |
+| `supabase/functions/sugerir-promocion/index.ts` | Edge Function que pide la sugerencia a Claude (se publica en Supabase, no en Vercel) |
+| `supabase/pruebas/` | Pruebas automáticas, carga masiva y medición de tiempos (en una base de prueba, nunca en Supabase) |
+| `.vercelignore` | Que la carpeta `supabase/` y los diagramas no se publiquen en el sitio |
 | `clima.js` | Pronóstico del clima (Open-Meteo) en Reservar y en el Dashboard |
-| `sql-10-datos-demo-fidelizacion.sql` | Opcional: 13 clientes de prueba con historial, para mostrar los segmentos en la demo |
-| `sql-11-correos-y-clima.sql` | Grupo sin correos (aviso al admin, regalo de bienvenida) y clima + personal por noche |
-| `sql-12-datos-demo-clima.sql` | Opcional: 3 meses de historial con el clima real, para mostrar la correlación en la demo |
 | `diagramas/` | Arquitectura, flujo de usuario y MER (Parte A) · flujo y MER de la Parte B |
 
-Los SQL se corren en ese orden en el SQL Editor de Supabase. Las cuentas de administradores se crean con un script aparte que **no** está en el repositorio (tiene contraseñas). La dirección del webhook de Make
+**Instalar la base:** en un proyecto nuevo, `marea-instalacion-completa.sql` (un solo archivo). En el proyecto actual, las migraciones que falten, en orden (para pasar a la versión final: `sql-13-escala-y-orden.sql`). Para saber en qué versión está una base: `select * from version_esquema order by version;`
+
+Las cuentas de administradores se crean con un script aparte que **no** está en el repositorio (tiene contraseñas). La dirección del webhook de Make
 y el correo del administrador se configuran aparte en la tabla `config_app` (no están en el repositorio).
+
+## Escalabilidad (etapa final)
+
+Se probó la base con **datos de carga** (clientes y reservas ficticios) y la web real contra esa base.
+Supabase corta cualquier consulta del panel a los **8 segundos**.
+
+| Operación | Antes (sql-1 … 12) | Versión 13 |
+|---|---|---|
+| Lista y segmentos de Fidelización · 300 clientes (hoy) | 0,23 s | 0,01 s |
+| Lo mismo con 1.500 clientes | 8,4 s ❌ (se corta) | 0,02 s |
+| Lo mismo con 20.000 clientes | más de 60 s ❌ | 0,4 s |
+| Lo mismo con 100.000 clientes | — | 2,0 s |
+| "Mis reservas" (tarjeta de sellos de un cliente) · 20.000 clientes | más de 60 s ❌ | 0,01 s |
+| Sentar a un grupo (suma un sello) · 20.000 clientes | más de 60 s ❌ | 0,002 s |
+| Proceso diario de beneficios · 200 clientes | 49 s | 0,1 s |
+| Proceso diario · 100.000 clientes | — | 2,9 s |
+| Pestaña Clientes · 20.000 clientes | bajaba todas las reservas (se cortaba en 1.000) | 0,02 s por página |
+
+Qué cambió:
+- **Índices** en las búsquedas frecuentes (reservas por cliente y por día, búsqueda por nombre o correo, todas las claves foráneas).
+- **Segmentación en una sola pasada** (antes, ~10 consultas por cliente). Mismo resultado: se comparó fila por fila con la versión anterior.
+- **Un cliente se calcula solo**: "Mis reservas" y la tarjeta de visitas ya no recalculan a todos.
+- **Listas paginadas** (de a 50 o 200, con "Ver más") y **totales contados en la base**: el navegador nunca recibe miles de filas.
+- **Proceso diario**: solo revisa a quien le toca algo y tiene un **tope de beneficios por día** (200, editable en Reglas); lo que sobra sale los días siguientes, sin saturar el envío de correos.
+- **Seguridad más eficiente** (avisos del asesor de Supabase): las reglas calculan "quién sos" una vez por consulta, una sola regla de lectura por tabla, funciones internas cerradas, `search_path` fijo en todas las funciones.
+- **Mantenimiento semanal** automático y **registro de versiones** (`version_esquema`).
+- **Sin repetición**: un solo archivo de instalación, generado y verificado contra las migraciones (mismo esquema, mismos permisos, mismas reglas).
+
+Pruebas: 48 comprobaciones automáticas de la base, las pruebas de las versiones anteriores (mismo resultado) y 27 comprobaciones de punta a punta de la web con 20.000 clientes. Ver `supabase/pruebas/`.
 
 ## Modelo de datos (Parte A)
 
@@ -217,7 +242,8 @@ Relaciones: USUARIO 1 — N RESERVA · MESA 1 — N RESERVA.
 - **campana** (id_campana, nombre, segmento, zona, grupo, asunto, mensaje, beneficio, vence_en, destinatarios, creada_por → usuario)
 - **ajustes_fidelizacion** (reglas de segmentos y beneficios, una sola fila)
 - **uso_ia** (id, id_usuario → usuario, fecha): registro de cada sugerencia de IA, para el tope diario
-- La **segmentación no se guarda**: la calcula la función `datos_clientes()`, así siempre está al día.
+- La **segmentación no se guarda**: la calcula la función `datos_clientes()` en una sola pasada, así siempre está al día (`datos_clientes_de(cliente)` calcula uno solo).
+- **version_esquema** (version, nombre, aplicada_en): qué scripts tiene instalados la base
 
 Relaciones: USUARIO 1 — N BENEFICIO · CAMPANA 1 — N BENEFICIO.
 
@@ -246,5 +272,7 @@ Relaciones: USUARIO 1 — N BENEFICIO · CAMPANA 1 — N BENEFICIO.
 | Cupones únicos, con vencimiento, de un solo uso, y solo un admin los canjea | Que un cupón se use dos veces o se invente |
 | Clave de la IA solo en el servidor (Secrets de Supabase) · a la IA van solo datos anónimos · solo admins · tope de 30 por día | Robo de la clave, fuga de datos personales, gasto descontrolado |
 | Funciones de fidelización internas sin permiso externo · texto de promociones escapado | Cupones o correos creados desde afuera, inyección de HTML |
+| Funciones de triggers y procesos cerradas a la web · reservar exige sesión · `search_path` fijo en todas | Llamadas directas a la automatización desde afuera |
+| Listas con tope (máx. 200 por página) y tope diario de beneficios | Consultas gigantes que traben el sistema · envíos masivos por error |
 
 **Mejoras futuras:** auditoría de cambios en reservas y verificación en dos pasos (MFA) para los administradores.

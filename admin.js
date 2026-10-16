@@ -6,7 +6,7 @@ const UMBRAL_ALERTA = 80; // % de ocupación que dispara la alerta
 const ESTADOS_EN_MESA = ["confirmada", "sentada", "completada"]; // cuentan para la ocupación
 
 let mesas = [];     // se cargan una vez y se refrescan al editar
-let clientes = [];  // para el formulario de nueva reserva
+let clientesElegibles = [];  // resultado del buscador de "Nueva reserva"
 let editandoId = null;
 
 // Minutos de apertura y cierre (si cierra a las 00:00, es 24:00)
@@ -68,13 +68,24 @@ async function cargarMesas() {
   mesas = data;
 }
 
-async function cargarClientes() {
-  const { data, error } = await db
-    .from("usuario")
-    .select("id_usuario, nombre, email, telefono, rol, fecha_creacion")
-    .order("nombre");
-  if (!error) clientes = data;
+// Buscador de clientes para "Nueva reserva": la base devuelve hasta 20
+// coincidencias (no se baja la lista entera, que puede tener miles).
+async function buscarClientesReserva(texto = "") {
+  const { data, error } = await db.rpc("buscar_clientes", { p_texto: texto, p_limite: 20 });
+  if (error) { avisoAdmin("error", mensajeDeError(error)); return; }
+  clientesElegibles = data;
+  const selector = document.getElementById("r-cliente");
+  selector.innerHTML = data.length
+    ? `<option value="">${texto ? `Elegí entre ${data.length === 20 ? "las primeras 20" : data.length} coincidencias…` : "Elegí un cliente (o buscalo arriba)…"}</option>` +
+      data.map((c) => `<option value="${c.id_usuario}">${esc(c.nombre || "Sin nombre")} · ${esc(c.email)}${c.telefono ? ` · ${esc(c.telefono)}` : ""}</option>`).join("")
+    : `<option value="">Ningún cliente coincide con "${esc(texto)}"</option>`;
+  if (data.length === 1) selector.value = data[0].id_usuario;
 }
+let esperaBuscarCliente = null;
+document.getElementById("r-cliente-buscar").addEventListener("input", (e) => {
+  clearTimeout(esperaBuscarCliente);
+  esperaBuscarCliente = setTimeout(() => buscarClientesReserva(e.target.value.trim()), 300);
+});
 
 // ---------------------------------------------------------
 // DASHBOARD
@@ -245,8 +256,8 @@ function pintarGrafico(activas) {
 // ---------------------------------------------------------
 const filtroFecha = document.getElementById("filtro-fecha");
 const filtroEstado = document.getElementById("filtro-estado");
-filtroFecha.addEventListener("change", cargarReservas);
-filtroEstado.addEventListener("change", cargarReservas);
+filtroFecha.addEventListener("change", () => cargarReservas());
+filtroEstado.addEventListener("change", () => cargarReservas());
 document.getElementById("btn-ver-todas").addEventListener("click", () => {
   filtroFecha.value = "";
   cargarReservas();
@@ -275,21 +286,38 @@ document.getElementById("btn-exportar").addEventListener("click", () => {
 });
 
 let reservasCargadas = [];
+let totalReservas = 0;
+const POR_PAGINA_RESERVAS = 200;
 
-async function cargarReservas() {
+// Un día: se traen todas. "Todos los días": de a 200, de la más nueva a
+// la más vieja, con "Ver más" (la base nunca manda miles de golpe).
+async function cargarReservas(mas = false) {
+  const desde = mas ? reservasCargadas.length : 0;
+  const unDia = !!filtroFecha.value;
   let consulta = db
     .from("reserva")
-    .select("id_reserva, id_usuario, id_mesa, fecha, hora, cantidad_personas, estado, duracion_min, ocasion, comentarios, usuario(nombre, email, telefono), mesa(numero, zona)")
-    .order("fecha", { ascending: true })
-    .order("hora", { ascending: true });
-  if (filtroFecha.value) consulta = consulta.eq("fecha", filtroFecha.value);
+    .select("id_reserva, id_usuario, id_mesa, fecha, hora, cantidad_personas, estado, duracion_min, ocasion, comentarios, usuario(nombre, email, telefono), mesa(numero, zona)",
+      { count: "exact" })
+    .order("fecha", { ascending: unDia })
+    .order("hora", { ascending: true })
+    .order("id_reserva", { ascending: true })
+    .range(desde, desde + POR_PAGINA_RESERVAS - 1);
+  if (unDia) consulta = consulta.eq("fecha", filtroFecha.value);
   if (filtroEstado.value) consulta = consulta.eq("estado", filtroEstado.value);
 
-  const { data, error } = await consulta;
+  const { data, error, count } = await consulta;
   if (error) { avisoAdmin("error", mensajeDeError(error)); return; }
-  reservasCargadas = data;
+  reservasCargadas = mas ? reservasCargadas.concat(data) : data;
+  totalReservas = count ?? reservasCargadas.length;
   pintarReservas();
+  const botonMas = document.getElementById("btn-mas-reservas");
+  botonMas.classList.toggle("oculto", reservasCargadas.length >= totalReservas);
+  botonMas.textContent = `Ver ${Math.min(POR_PAGINA_RESERVAS, totalReservas - reservasCargadas.length)} más`;
+  document.getElementById("conteo-reservas").textContent = totalReservas > reservasCargadas.length
+    ? `Mostrando ${reservasCargadas.length.toLocaleString("es-UY")} de ${totalReservas.toLocaleString("es-UY")} (de la más nueva a la más vieja). El buscador y la exportación usan las que se ven.`
+    : "";
 }
+document.getElementById("btn-mas-reservas").addEventListener("click", () => cargarReservas(true));
 
 // Filtro de texto (nombre, correo o teléfono) sobre lo que ya se cargó
 function reservasFiltradas() {
@@ -412,13 +440,14 @@ function llenarSelectores() {
     mesas.filter((m) => m.estado === "activa")
       .map((m) => `<option value="${m.id_mesa}">Mesa ${m.numero} · para ${m.capacidad}${m.zona ? ` · ${m.zona}` : ""}</option>`)
       .join("");
-  document.getElementById("r-cliente").innerHTML =
-    `<option value="">Elegí un cliente…</option>` +
-    clientes.map((c) => `<option value="${c.id_usuario}">${esc(c.nombre || "Sin nombre")} · ${esc(c.email)}</option>`).join("");
 }
 
 function abrirPanel(reserva = null) {
   llenarSelectores();
+  if (!reserva) {
+    document.getElementById("r-cliente-buscar").value = "";
+    buscarClientesReserva("");
+  }
   editandoId = reserva ? reserva.id_reserva : null;
   document.getElementById("panel-reserva-titulo").textContent =
     reserva ? `Editar reserva n.º ${reserva.id_reserva}` : "Nueva reserva";
@@ -670,35 +699,39 @@ document.getElementById("form-tiempos").addEventListener("submit", async (e) => 
 // CLIENTES
 // ---------------------------------------------------------
 let filasClientes = [];
+let totalFilasClientes = 0;
+const POR_PAGINA_CLIENTES = 50;
 
-async function cargarClientesTabla() {
-  await cargarClientes();
-  const { data, error } = await db.from("reserva").select("id_usuario, fecha, hora, estado");
-  if (error) { avisoAdmin("error", mensajeDeError(error)); return; }
-
-  const hoy = hoyISO();
-  filasClientes = clientes.map((c) => {
-    const propias = data.filter((r) => r.id_usuario === c.id_usuario);
-    const validas = propias.filter((r) => r.estado !== "cancelada");
-    const asistio = propias.filter((r) => r.estado === "completada");
-    const fallas = propias.filter((r) => r.estado === "cancelada" || r.estado === "no_asistio");
-    const ultima = asistio.map((r) => r.fecha).sort().pop() || null;
-    const proxima = propias
-      .filter((r) => r.estado === "confirmada" && r.fecha >= hoy)
-      .map((r) => r.fecha).sort()[0] || null;
-    return { ...c, total: validas.length, asistio: asistio.length, fallas: fallas.length, ultima, proxima };
+// La base cuenta las reservas de cada cliente y manda de a 50
+// (antes se bajaban TODAS las reservas al navegador).
+async function cargarClientesTabla(mas = false) {
+  const desde = mas ? filasClientes.length : 0;
+  const { data, error } = await db.rpc("clientes_panel", {
+    p_buscar: document.getElementById("buscar-cliente").value.trim() || null,
+    p_limite: POR_PAGINA_CLIENTES,
+    p_desde: desde,
   });
-
-  const soloClientes = filasClientes.filter((c) => c.rol === "cliente").length;
-  document.getElementById("resumen-clientes").textContent =
-    `${soloClientes} ${soloClientes === 1 ? "cliente registrado" : "clientes registrados"}`;
+  if (error) { avisoAdmin("error", mensajeDeError(error)); return; }
+  filasClientes = mas ? filasClientes.concat(data) : data;
+  if (data.length) {
+    totalFilasClientes = Number(data[0].total_filas);
+    const soloClientes = Number(data[0].total_clientes);
+    document.getElementById("resumen-clientes").textContent =
+      `${soloClientes.toLocaleString("es-UY")} ${soloClientes === 1 ? "cliente registrado" : "clientes registrados"}`;
+  } else if (!mas) {
+    totalFilasClientes = 0;
+  }
+  const botonMas = document.getElementById("btn-mas-clientes");
+  botonMas.classList.toggle("oculto", filasClientes.length >= totalFilasClientes);
+  botonMas.textContent = `Ver más (${(totalFilasClientes - filasClientes.length).toLocaleString("es-UY")} restantes)`;
+  document.getElementById("conteo-clientes").textContent = totalFilasClientes > POR_PAGINA_CLIENTES
+    ? `Mostrando ${filasClientes.length.toLocaleString("es-UY")} de ${totalFilasClientes.toLocaleString("es-UY")}`
+    : "";
   pintarClientes();
 }
 
 function pintarClientes() {
-  const texto = document.getElementById("buscar-cliente").value.trim().toLowerCase();
-  const lista = filasClientes.filter((c) =>
-    !texto || (c.nombre || "").toLowerCase().includes(texto) || c.email.toLowerCase().includes(texto));
+  const lista = filasClientes;
 
   const cuerpo = document.getElementById("tabla-clientes");
   if (!lista.length) {
@@ -723,7 +756,12 @@ function pintarClientes() {
     </tr>`).join("");
 }
 
-document.getElementById("buscar-cliente").addEventListener("input", pintarClientes);
+let esperaBuscarClientes = null;
+document.getElementById("buscar-cliente").addEventListener("input", () => {
+  clearTimeout(esperaBuscarClientes);
+  esperaBuscarClientes = setTimeout(() => cargarClientesTabla(), 300);
+});
+document.getElementById("btn-mas-clientes").addEventListener("click", () => cargarClientesTabla(true));
 
 // ---------------------------------------------------------
 // Inicio
@@ -736,7 +774,7 @@ document.getElementById("buscar-cliente").addEventListener("input", pintarClient
 
   dashFecha.value = hoyISO();
   filtroFecha.value = hoyISO();
-  await Promise.all([cargarMesas(), cargarClientes(), cargarReglasTiempo()]);
+  await Promise.all([cargarMesas(), cargarReglasTiempo()]);
   prepararSalon();      // admin-salon.js
   cargarDashboard();
   cargarSemana();
