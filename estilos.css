@@ -977,10 +977,14 @@ a { color: var(--azul-ola); }
 .campo-forma { max-width: 140px; }
 .plano-etiqueta-ventanal { font-size: 1.7px; fill: var(--azul-marea); }
 
-/* Plano en celular: se puede deslizar para que las mesas sean fáciles de tocar */
+/* Plano en celular: entra completo en la pantalla, sin cortarse */
+.plano { touch-action: manipulation; }
+.plano-editable { touch-action: none; }
 @media (max-width: 576px) {
-  .plano-caja { overflow-x: auto; }
-  .plano { min-width: 540px; }
+  .plano-caja { padding: 0.7rem 0.5rem; margin-left: -0.6rem; margin-right: -0.6rem; }
+  .plano { min-width: 0; }
+  .mesa-numero { font-size: 3.8px; }
+  .plano-etiqueta-ventanal { font-size: 2.1px; }
   .nav-enlaces { gap: 0.7rem; }
   .nav-enlaces a, .enlace-boton { font-size: 0.85rem; white-space: nowrap; }
   .nav-enlaces a[href="reservar.html"] { padding: 0.35rem 0.8rem; }
