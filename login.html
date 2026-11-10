@@ -78,9 +78,15 @@
         </form>
 
         <form id="form-registro" class="oculto">
-          <div class="mb-3">
-            <label class="form-label" for="registro-nombre">Nombre</label>
-            <input class="form-control" type="text" id="registro-nombre" required autocomplete="name">
+          <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+              <label class="form-label" for="registro-nombre">Nombre</label>
+              <input class="form-control" type="text" id="registro-nombre" required autocomplete="given-name">
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label" for="registro-apellido">Apellido</label>
+              <input class="form-control" type="text" id="registro-apellido" required autocomplete="family-name">
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label" for="registro-telefono">Teléfono</label>
