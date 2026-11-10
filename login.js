@@ -123,7 +123,9 @@ formRegistro.addEventListener("submit", async (e) => {
     password: clave,
     options: {
       data: {
-        nombre: document.getElementById("registro-nombre").value.trim(),
+        // Nombre y apellido se guardan juntos en "nombre" (ej.: "Ana Pérez").
+        nombre: (document.getElementById("registro-nombre").value.trim() + " " +
+                 document.getElementById("registro-apellido").value.trim()).trim(),
         telefono,
         acepta_privacidad: "si",
         fecha_nacimiento: nacimiento || null,

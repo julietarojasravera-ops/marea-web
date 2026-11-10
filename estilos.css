@@ -1524,3 +1524,26 @@ a { color: var(--azul-ola); }
   gap: 12px; flex-wrap: wrap; margin-top: 12px;
 }
 .destinatarios-resto { color: var(--gris-suave); font-style: italic; justify-content: center; }
+
+/* Botón "Ver" / "Ocultar" dentro de los campos de contraseña */
+.campo-clave { position: relative; }
+.campo-clave .form-control { width: 100%; padding-right: 5.5rem; }
+.btn-ver-clave {
+  position: absolute;
+  top: 50%;
+  right: 0.6rem;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: var(--azul-ola);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.3rem 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn-ver-clave:hover,
+.btn-ver-clave:focus-visible {
+  background: var(--arena-clara);
+  outline: none;
+}

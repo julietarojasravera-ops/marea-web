@@ -244,7 +244,33 @@ function prepararMenuCelular() {
   });
 }
 
+// ---------- Botón "Ver" en los campos de contraseña ----------
+// A cada campo de contraseña le agrega un botón para mostrarla u ocultarla.
+function prepararVerClave() {
+  document.querySelectorAll('input[type="password"]').forEach((campo) => {
+    const caja = document.createElement("div");
+    caja.className = "campo-clave";
+    campo.parentNode.insertBefore(caja, campo);
+    caja.appendChild(campo);
+
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.className = "btn-ver-clave";
+    boton.textContent = "Ver";
+    boton.setAttribute("aria-label", "Mostrar contraseña");
+    boton.addEventListener("click", () => {
+      const mostrar = campo.type === "password";
+      campo.type = mostrar ? "text" : "password";
+      boton.textContent = mostrar ? "Ocultar" : "Ver";
+      boton.setAttribute("aria-label", mostrar ? "Ocultar contraseña" : "Mostrar contraseña");
+      campo.focus();
+    });
+    caja.appendChild(boton);
+  });
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
+  prepararVerClave();
   prepararMenuCelular();
   await pintarMenu();
   marcarPaginaActual();
